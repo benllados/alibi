@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://replace-with-your-render-server.example/api/:path*"
+      "destination": "https://alibi-wzrg.onrender.com/api/:path*"
     },
     { "source": "/host", "destination": "/index.html" },
     { "source": "/join", "destination": "/index.html" }
