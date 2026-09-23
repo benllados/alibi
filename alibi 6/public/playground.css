@@ -1,0 +1,156 @@
+/* The notebook is a stage. All moving ink is transparent to pointer events. */
+.home-playground { isolation: isolate; }
+.home-playground .home-top,
+.home-playground .home-main,
+.home-playground .home-footer { position: relative; z-index: 2; }
+.home-playground .home-main { grid-template-columns: minmax(0,1.25fr) minmax(0,1fr); gap: clamp(28px,4vw,70px); }
+.home-playground .home-story { height: auto; padding: 8px 0 5px; }
+.home-playground .home-logo { width: min(100%, 620px); max-width: none; margin: 0 0 19px; }
+.home-playground .home-premise { font-size: clamp(34px,3.65vw,55px); line-height: 1.07; max-width: 13ch; }
+.home-playground .home-explainer { font-size: clamp(19px,1.85vw,28px); line-height: 1.28; margin-top: 15px; max-width: 32ch; }
+.home-playground .play-facts { font-size: clamp(9px,.91vw,13px); margin-top: 19px; }
+.home-playground .join-area { margin-top: 22px; }
+.home-playground .join-sheet { padding: 27px 28px 23px; }
+.home-playground .join-sheet h2 { font-size: 43px; margin-bottom: 20px; }
+.home-playground .join-sheet .btn { min-height: 52px; font-size: 29px; }
+.home-playground .choice-hint { font-size: 19px; margin: 10px 0 20px; }
+.home-playground .preview-thumbnail { width: 112px; }
+.home-playground .preview-button b { font-size: 24px; }
+.home-playground .or-line { font-size: 16px; margin: 0 0 16px; }
+.home-playground .home-star { animation: none; transform: rotate(var(--playground-star-tilt,0deg)); transform-origin: 50% 50%; }
+.home-playground .home-pencil { animation: none; opacity: var(--playground-pencil-opacity,1); }
+.playground-space { height: clamp(143px,19vh,185px); flex: 0 0 auto; width: 100%; margin-top: 5px; position: relative; z-index: 0; }
+.playground-layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; user-select: none; contain: layout paint; }
+.playground-layer * { pointer-events: none; }
+.playground-back { z-index: 1; }
+.playground-front { z-index: 4; }
+.playground-toggle { align-self: flex-end; position: relative; z-index: 5; border: 0; background: none; padding: 4px 3px; margin-top: 2px; color: var(--blue); font: 10px/1.3 var(--mono); min-height: 23px; cursor: pointer; }
+.playground-toggle span { font: 13px/1 sans-serif; margin-right: 5px; }
+.playground-toggle:hover { text-decoration: underline; text-underline-offset: 3px; }
+.playground-toggle:focus-visible { outline: 2px dashed var(--blue); outline-offset: 2px; }
+.playground-toggle:disabled { cursor: default; opacity: .65; }
+.home-playground .home-footer { padding-top: 0; margin-top: 0; min-height: 31px; }
+@media (min-width: 681px) and (max-height: 820px) {
+ .home-playground { padding-top: 16px; padding-bottom: 12px; }
+ .home-playground .home-logo { width: min(100%, 400px); margin-bottom: 14px; }
+ .home-playground .home-premise { font-size: clamp(32px,3.5vw,47px); }
+ .home-playground .home-explainer { font-size: 21px; margin-top: 11px; }
+ .home-playground .play-facts { margin-top: 15px; font-size: 10px; }
+ .home-playground .join-sheet { padding: 20px 24px; }
+ .home-playground .join-sheet h2 { font-size: 35px; margin-bottom: 13px; }
+ .home-playground .join-sheet .btn { min-height: 45px; font-size: 25px; padding: 9px 13px; }
+ .home-playground .choice-hint { font-size: 16px; margin: 8px 0 14px; }
+ .home-playground .or-line { margin-bottom: 12px; font-size: 14px; }
+ .home-playground .preview-thumbnail { width: 85px; }
+ .home-playground .preview-button b { font-size: 22px; }
+ .home-playground .preview-button small { font-size: 9px; }
+ .playground-space { height: 150px; }
+}
+@media (min-width: 681px) and (max-width: 1000px) {
+ .home-playground .home-main { gap: 25px; grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+ .home-playground .home-premise { font-size: 37px; }
+ .home-playground .home-explainer { font-size: 19px; }
+ .home-playground .join-sheet { padding: 18px 20px; }
+ .home-playground .join-sheet h2 { font-size: 33px; }
+ .home-playground .join-sheet .btn { font-size: 23px; min-height: 43px; }
+ .home-playground .choice-hint { font-size: 16px; }
+ .home-playground .preview-thumbnail { width: 66px; }
+ .home-playground .preview-button b { font-size: 18px; }
+}
+@media (min-width: 681px) and (max-height: 650px) {
+ .home-playground .home-top { min-height: 22px; }
+ .home-playground .home-logo { width: min(100%,285px); margin-bottom: 9px; }
+ .home-playground .home-premise { font-size: 33px; }
+ .home-playground .home-explainer { font-size: 17px; margin-top: 8px; }
+ .home-playground .play-facts { font-size: 9px; margin-top: 10px; }
+ .home-playground .join-area { margin-top: 8px; }
+ .home-playground .join-sheet { padding: 14px 20px; }
+ .home-playground .join-sheet h2 { font-size: 29px; margin-bottom: 10px; }
+ .home-playground .join-sheet .btn { font-size: 21px; min-height: 35px; padding: 6px 12px; }
+ .home-playground .choice-hint { font-size: 14px; margin: 7px 0 10px; }
+ .home-playground .or-line { font-size: 12px; margin-bottom: 9px; }
+ .home-playground .preview-thumbnail { width: 61px; }
+ .home-playground .preview-button b { font-size: 18px; }
+ .home-playground .preview-button small { font-size: 8px; }
+ .home-playground .join-arrow { font-size: 13px; }
+ .playground-space { height: 123px; margin-top: 0; }
+ .playground-toggle { font-size: 8px; min-height: 18px; padding: 2px; }
+ .home-playground .home-footer { min-height: 23px; }
+}
+@media (max-width: 680px) {
+ .home-playground .home-main { display: flex; flex-direction: column; gap: 13px; }
+ .home-playground .home-story { height: auto; min-height: 0; padding: 0; text-align: center; flex: none; }
+ .home-playground .home-logo { width: 139px; margin: 0 auto 7px; }
+ .home-playground .home-premise { max-width: none; font-size: 29px; line-height: 1.03; }
+ .home-playground .home-explainer { font-size: 15px; max-width: 34ch; margin: 7px auto 0; }
+ .home-playground .play-facts { font-size: 8px; margin-top: 9px; }
+ .home-playground .join-area { margin-top: 0; max-width: 370px; }
+ .home-playground .join-sheet { padding: 14px 19px; }
+ .home-playground .join-sheet h2 { font-size: 27px; margin-bottom: 11px; }
+ .home-playground .join-sheet .btn { min-height: 40px; font-size: 22px; padding: 7px 12px; }
+ .home-playground .choice-hint { font-size: 13px; line-height: 1.18; margin: 7px 0 11px; }
+ .home-playground .or-line { font-size: 12px; margin: 0 0 10px; }
+ .home-playground .preview-thumbnail { width: 69px; height: 39px; }
+ .home-playground .preview-button b { font-size: 19px; }
+ .home-playground .preview-button small { font-size: 8px; margin-top: 1px; }
+ .playground-space { height: 88px; margin-top: 7px; }
+ .playground-toggle { font-size: 8px; min-height: 20px; padding: 3px; margin: 0; }
+ .home-playground .home-footer { margin-top: 1px; min-height: 26px; }
+ .home-playground .home-footer nav { width: 100%; justify-content: space-between; gap: 10px; }
+ .home-playground .home-footer .text-button { font-size: 12px; }
+ .home-playground.is-joining .home-logo { width: 106px; }
+ .home-playground.is-joining .home-explainer { display: none; }
+ .home-playground.is-joining .join-sheet { padding-top: 11px; padding-bottom: 12px; }
+ .home-playground.is-joining .playground-space { height: 72px; }
+}
+@media (max-width: 680px) and (max-height: 650px) {
+ .home-playground .home-main { gap: 8px; }
+ .home-playground .home-logo { width: 99px; margin-bottom: 5px; }
+ .home-playground .home-premise { font-size: 25px; }
+ .home-playground .home-explainer { font-size: 13px; margin-top: 5px; }
+ .home-playground .play-facts { font-size: 7px; margin-top: 6px; }
+ .home-playground .join-sheet { padding: 10px 16px; }
+ .home-playground .join-sheet h2 { font-size: 24px; margin-bottom: 9px; }
+ .home-playground .join-sheet .btn { font-size: 20px; min-height: 35px; padding: 6px 10px; }
+ .home-playground .choice-hint { font-size: 12px; margin: 6px 0 8px; }
+ .home-playground .or-line { font-size: 10px; margin-bottom: 7px; }
+ .home-playground .preview-thumbnail { width: 58px; height: 32px; }
+ .home-playground .preview-button b { font-size: 17px; }
+ .home-playground .preview-button small { font-size: 7px; }
+ .playground-space { height: 74px; margin-top: 3px; }
+ .home-playground.is-joining .home-logo { width: 80px; }
+ .home-playground.is-joining .home-premise { font-size: 22px; }
+ .home-playground.is-joining .playground-space { height: 62px; }
+}
+.keyboard-open .home-playground .playground-space,
+.keyboard-open .home-playground .playground-layer,
+.keyboard-open .home-playground .playground-toggle { display: none; }
+@media (prefers-reduced-motion: reduce) {
+ .home-playground .home-star { transform: none; }
+}
+/* On phones the two action labels already introduce this sheet. */
+@media (max-width: 680px) {
+ .home-playground.is-choosing .join-sheet h2 { display: none; }
+ .home-playground .home-footer .tiny-smile { font-size: 0; flex: 0 0 25px; }
+}
+/* A sideways phone uses the same two-column composition as a small laptop. */
+@media (max-width: 680px) and (max-height: 500px) and (orientation: landscape) {
+ .home-playground .home-main { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 22px; }
+ .home-playground .home-story { text-align: left; }
+ .home-playground .home-logo { width: 115px; margin-left: 0; }
+ .home-playground .home-premise { font-size: 23px; }
+ .home-playground .home-explainer { font-size: 12px; margin-left: 0; }
+ .home-playground .play-facts { font-size: 7px; margin-left: 0; }
+ .home-playground .choice-hint { font-size: 11px; margin: 4px 0 7px; }
+ .home-playground .join-sheet { padding: 9px 14px; }
+ .home-playground .join-sheet .btn { min-height: 31px; padding: 4px 9px; font-size: 18px; }
+ .home-playground .home-top { min-height: 18px; }
+ .playground-space { height: 62px; }
+ .playground-toggle { min-height: 17px; padding: 1px; }
+ .home-playground .home-footer { min-height: 21px; }
+ .home-playground .home-footer nav { width: auto; gap: 22px; }
+}
+
+/* Keep menu music available without adding another panel to the landing page. */
+.home-top .edition{display:flex;align-items:center;gap:8px}.home-top .edition>span{margin:0 3px}.home-top .sound-button{font-size:14px;white-space:nowrap;margin-left:5px}.audio-settings #audio-status:empty{display:none}
+@media(max-width:680px){.home-top .edition{font-size:9px;gap:3px}.home-top .sound-button{font-size:12px;padding:4px 6px}.home-top .tape-label{max-width:45%;font-size:9px}}

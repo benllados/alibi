@@ -1,9 +1,9 @@
 {
   "name": "alibi-party-game",
-  "version": "0.4.1",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
-  "description": "A local, real-time party game about your friends' questionable stories.",
+  "description": "A real-time party game where your friends are the trivia.",
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test test/*.test.mjs"

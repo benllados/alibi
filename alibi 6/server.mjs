@@ -17,8 +17,8 @@ const connections = new Map();
 function interfaces(){try{return Object.values(networkInterfaces()).flat();}catch{return [];}}
 export const game = new Game({aiDecoys,aiSketches,onChange(room){for(const c of connections.get(room.code)||[]){try{c.res.write(`data: ${JSON.stringify(game.snapshot(room,c.token))}\n\n`);}catch{c.res.end();}}}});
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
-const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.webp':'image/webp','.otf':'font/otf'};
-const files=new Map([['/','index.html'],['/join','index.html'],['/host','index.html'],['/app.js','app.js'],['/style.css','style.css'],['/favicon.svg','favicon.svg'],['/favicon-smiley.webp','favicon-smiley.webp'],...['characters.js','art.js','audio.js','logo.js','fonts/smile-moon.otf','art/paper.svg'].map(file=>['/'+file,file])]);
+const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png','.otf':'font/otf','.mp4':'video/mp4','.mp3':'audio/mpeg','.json':'application/json','.vtt':'text/vtt; charset=utf-8'};
+const files=new Map([['/','index.html'],['/join','index.html'],['/host','index.html'],['/app.js','app.js'],['/style.css','style.css'],['/favicon.svg','favicon.svg'],['/favicon-yellow.png','favicon-yellow.png'],['/favicon-smiley.webp','favicon-smiley.webp'],...['entrance.css','playground.css','playground.js','playground-scene.js','media/alibi-preview.mp4','media/preview-poster.webp','media/alibi-preview.vtt','music/paper-trails-bed.mp3','music/paper-trails-spark.mp3','music/theme.json','characters.js','art.js','audio.js','logo.js','fonts/smile-moon.otf','art/paper.svg'].map(file=>['/'+file,file])]);
 const limits=new Map();
 function rateLimit(req){const key=req.socket.remoteAddress;const now=Date.now();let item=limits.get(key);if(!item||now-item.time>60000){item={time:now,count:0};limits.set(key,item);}if(++item.count>400)throw Error('Too many requests. Please wait a moment.');}
 function json(res,status,obj){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(obj));}
@@ -30,7 +30,23 @@ export const server=http.createServer(async(req,res)=>{
  if(req.method==='GET'&&url.pathname==='/api/network'){const port=server.address().port;const addresses=hosting.hosted?[]:interfaces().filter(x=>x.family==='IPv4'&&!x.internal).map(x=>`http://${x.address}:${port}`);return json(res,200,{addresses});}
  if(req.method==='GET'&&['/api/events','/api/state'].includes(url.pathname)){const room=game.room(url.searchParams.get('room'));const token=url.searchParams.get('token');const snapshot=game.snapshot(room,token);if(url.pathname==='/api/state')return json(res,200,snapshot);res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no'});res.write(`data: ${JSON.stringify(snapshot)}\n\n`);const c={token,res};if(!connections.has(room.code))connections.set(room.code,new Set());connections.get(room.code).add(c);req.on('close',()=>connections.get(room.code)?.delete(c));return;}
  if(req.method==='POST'&&url.pathname.startsWith('/api/')){rateLimit(req);if(!hosting.allowsOrigin(req.headers.origin,req.headers.host))return json(res,403,{error:'Open the game from its own address.'});const data=await body(req);if(url.pathname==='/api/rooms'){if(game.rooms.size>=250)throw Error('Too many rooms. Please try again later.');return json(res,201,game.create());}if(url.pathname==='/api/join')return json(res,200,game.join(data.room,data.name,data.character));if(url.pathname==='/api/action')return json(res,200,game.action(data.room,data.token,data));return json(res,404,{error:'Not found.'});}
- if(req.method==='GET'&&files.has(url.pathname)){const file=files.get(url.pathname);const ext=file.slice(file.lastIndexOf('.'));const content=await readFile(publicDir+file);res.writeHead(200,{'Content-Type':types[ext],'Cache-Control':'no-cache'});res.end(content);return;}
+ if(['GET','HEAD'].includes(req.method)&&files.has(url.pathname)){
+  const file=files.get(url.pathname),ext=file.slice(file.lastIndexOf('.')),content=await readFile(publicDir+file);
+  const headers={'Content-Type':types[ext],'Cache-Control':'no-cache','Content-Length':content.length};
+  if(['.mp4','.mp3'].includes(ext))headers['Accept-Ranges']='bytes';
+  // Byte ranges let native video controls seek without downloading the whole clip again.
+  if(['.mp4','.mp3'].includes(ext)&&req.method==='GET'&&req.headers.range){
+   const match=/^bytes=(\d*)-(\d*)$/.exec(req.headers.range);
+   let start=NaN,end=NaN;
+   if(match&&(match[1]||match[2])){
+    if(match[1]){start=Number(match[1]);end=match[2]?Math.min(Number(match[2]),content.length-1):content.length-1;}
+    else if(Number(match[2])>0){start=Math.max(0,content.length-Number(match[2]));end=content.length-1;}
+   }
+   if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<0||start>=content.length||start>end){res.writeHead(416,{'Content-Range':`bytes */${content.length}`,'Content-Length':0});res.end();return;}
+   res.writeHead(206,{...headers,'Content-Range':`bytes ${start}-${end}/${content.length}`,'Content-Length':end-start+1});res.end(content.subarray(start,end+1));return;
+  }
+  res.writeHead(200,headers);res.end(req.method==='HEAD'?undefined:content);return;
+ }
  json(res,404,{error:'Not found.'});
  }catch(err){if(!res.headersSent)json(res,400,{error:err.message});else res.end();}
 });

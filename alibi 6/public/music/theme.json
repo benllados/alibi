@@ -1,0 +1,24 @@
+{
+  "title": "Paper Trails",
+  "bpm": 96,
+  "bars": 48,
+  "seconds": 120.0,
+  "sampleRate": 44100,
+  "loopStart": 0,
+  "loopEnd": 120.0,
+  "bed": "/music/paper-trails-bed.mp3",
+  "spark": "/music/paper-trails-spark.mp3",
+  "composition": "Original authored score; fully synthesized instruments; no sampled reference audio.",
+  "form": "Six eight-bar sections: theme, answer, bridge, bridge variation, quiet reprise, return.",
+  "instruments": [
+    "nylon/kalimba pluck",
+    "felt keys",
+    "soft bells",
+    "warm strings",
+    "breathy flute",
+    "round bass",
+    "brushes",
+    "wood taps",
+    "shakers"
+  ]
+}

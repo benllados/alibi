@@ -1,14 +1,68 @@
-# Alibi · v0.4.1 — The notebook build
+# Alibi · v0.9.0 — Meet your guides
 
 A real-time party game for 2–8 friends. One browser is the shared TV screen; every player joins from a separate phone or browser tab. Includes generated prompts, player-written questions, bluffing, secret roles, scoring, and a drawing finale.
 
 ## Publish online
 
-See [DEPLOY.md](DEPLOY.md) for step-by-step Vercel + Render instructions. This patch adds the static-site configuration, an explicit `PUBLIC_ORIGIN` setting for forwarded API requests, and public invite links in hosted mode. Replace the placeholder Render destination in `vercel.json` before deploying. Nothing has been published yet.
+See [UPDATE.md](UPDATE.md) for updating Ben's existing GitHub/Vercel/Render deployment, or [DEPLOY.md](DEPLOY.md) for setup from scratch. The API rewrite is configured for `https://alibi-wzrg.onrender.com`. The canonical production origin on Render is `https://www.alib.app` (the apex domain redirects there). These local changes have not been published to the live site.
 
 ## Update from the previous build
 
-Stop the old server with Ctrl+C. Unzip this build, then launch `Start-Alibi.command` or run `npm start` in the new `alibi` folder. Open http://localhost:3000 and refresh any old host/player tabs. Start a new room; in-memory matches do not carry across server restarts. This build opens with a handwritten Alibi logo, notebook paper, and a “get in here” join sheet.
+Stop the old server with Ctrl+C. Unzip this build, then launch `Start-Alibi.command` or run `npm start` in the new `alibi` folder. Open http://localhost:3000 and refresh any old host/player tabs. Start a new room; in-memory matches do not carry across server restarts. This build opens with the handwritten Alibi logo, a clear game premise, and separate Host / Join choices. Room-code invitations still open the join form directly.
+
+## What changed in v0.9.0
+
+- The feature preview is now the approved **50-second character-led walkthrough**, with the four actual menu characters speaking in large text bubbles. It covers the premise, joining, character selection, normal bluffing/scoring, player questions, secret roles, the drawing finale, host coordination, reconnecting, and the winner.
+- Uses the production articulated SVG rig, handwriting, logo-to-smiley transition, cartoon finale flames, progressive drawing strokes, anonymous voting, and the frog-hat closing joke.
+- The exact approved simple-language dialogue is on screen. No profanity or GPT attribution appears in the video. The separately opened project case study is unchanged.
+- The original Paper Trails fifty-second edit is mixed with synthesized paper, selection, reveal, and frog sounds. Dialogue works entirely through speech bubbles; there is no spoken narration.
+- Export: H.264, 1920×1080, 24 fps, AAC stereo, exactly 50 seconds, with fast-start metadata. Native controls, click-to-play, a new poster, an optional English caption track, and the complete dialogue transcript are included.
+- The walkthrough is labeled **Example game** and uses composed gameplay examples, rather than claiming to be a recorded live match. This update is prepared locally and has not been deployed.
+
+## What changed in v0.8.0
+
+- **Paper Trails:** An original two-minute, 96 BPM instrumental with plucked strings/thumb-piano tones, felt keys, soft bells, warm strings, flute, bass, and light percussion. Six eight-bar sections provide a theme, contrasting middle, quiet reprise, and return.
+- The two synchronized music layers loop on one Web Audio clock. Menu/lobby/reveals get the full arrangement; writing and drawing lower the melody and bright percussion smoothly without restarting the song.
+- The homepage has a **♫ music** control. Open it and select **play music**. Browser permission requires a click before audio; the page does not autoplay. Creating a host room also enables music unless the device was muted. Music carries continuously from menu to host.
+- Join forms and player seats stay silent. Music stops while the game is paused, the tab is hidden, or the feature-video panel is open. Closing that panel resumes it only if it was already enabled.
+- Mute and volume preferences are saved on the device. Slow or failed downloads cannot start music after joining as a player or after muting; failed loads have a retry.
+- Small game cues are retuned to the soundtrack. Two bundled MP3 stems total about 3.9 MB and load only when music is enabled. No music service, API key, Python, or rendering dependency is needed to play or deploy.
+- `tools/compose-theme.py` contains the authored score and instrument synthesis. It does not read, sample, or bundle the supplied reference recording. Optional renderer dependencies are documented in `tools/README.md`.
+- At v0.8.0, the previous 44-second visual walkthrough remained in place, with a separate music edit prepared for the subsequent character-led video.
+
+## What changed in v0.7.0
+
+- Characters are roughly 20–25% larger on common desktop layouts, with a smaller increase on phones. Each has a different silhouette and physical personality.
+- The sequential 103-second scene loop is replaced by overlapping authored action tracks in two alternating 48-second arrangements. Football, paper folding, and wand practice begin together. Magic starts at 7 seconds; the plane launches while the magician finishes his bow; a pencil-lifting attempt overlaps the flight. Star repair overlaps solo juggling.
+- The rig now has separate torso movement, bent elbows and knees, planted walking steps, open/gripping/pointing/clapping hands, profile turns, expressive mouths and brows, nose/cheek details, and independent cape, glasses, flower, and hat movement.
+- Magic includes the wrong object from a sleeve, hat-eye blink, sprouting legs, crouching and stretching frog jumps, head-patting panic, hat regrowth, and an exaggerated bow. The football impact, hat handoff, paper folds, pencil stop, and late reactions have sharper timing.
+- Held objects are resolved against the final hand pose after overlapping actions run. The frog on Cowboy’s hat follows his moving head. State such as the crooked star survives across activities.
+- Form/modal quiet mode preserves the scene clock; closing a panel resumes instead of restarting the opening. Pause, reduced-motion handling, hidden-tab suspension, and cleanup on game entry remain.
+- No new runtime dependencies or environment settings. The existing gameplay, favicon, and professional feature walkthrough are preserved.
+
+## What changed in v0.6.0
+
+- A simpler front page: the large Alibi logo, “Your friends are the trivia,” one short explanation, player/device facts, and the Host / Join panel. The crossed-out tagline, sticker cluster, and round-summary strip are replaced by a four-character playground.
+- Four articulated characters use the actual in-game avatar pieces: Frog in overalls, a mustached Cowboy, Flower in heart glasses, and Cape, who becomes a magician. Their eyes, expressions, heads, arms, feet, and hats move separately.
+- Five connected scenes: a football accident and hat rescue; the frog-hat magic trick and regrowth; visible paper folding and a plane around the logo and panel; a borrowed-pencil ride; and repairing the star knocked crooked earlier.
+- The first magic trick starts at 22 seconds. The 103-second sequence includes quiet gaps between scenes. The effects are silent and adapt their positions to the measured menu geometry.
+- The join form and open panels put the cast into a quieter idle. The animation layers never accept pointer events, so buttons and fields stay clickable. Animation stops on game entry and while the page is hidden.
+- A small pause control remembers the device’s preference. OS reduced-motion preferences show the four static characters. Mobile sizes use a compact stage; opening the phone keyboard hides the stage.
+- No extra packages, API calls, or environment variables are required. The existing yellow icon, professional feature video, and game rules are preserved.
+
+## What changed in v0.5.1
+
+- The desktop homepage has a larger logo, wider action panel, larger buttons, and more prominent doodles. Compact layouts retain their own sizing.
+- The homepage, project panel, video, and video poster use profanity-free copy. In-game copy is unchanged.
+- The favicon is a tightly cropped yellow version of the original scribbled smiley. The page uses a new PNG filename to avoid the old cached icon.
+
+## What changed in v0.5
+
+- The homepage explains the premise and device setup before asking for a room code. Host and Join have separate paths; form drafts survive switching between them. The notebook, jokes, and doodles remain.
+- **See it in action** opens a 44-second, 720p H.264 walkthrough. It uses the actual character, logo, and doodle SVG assets in animated example scenes. It is labeled as an animated walkthrough, not recorded gameplay. Captions are built into the picture; it is silent, does not autoplay, and has a text transcript. Closing it stops playback.
+- The walkthrough covers character customization, room joining, the smiley transition, bluff voting, private drawing assignments, drawing strokes, the gallery reveal, and the crowned winner. Short captions explain the implementation.
+- **About the project** describes the product problem, Ben's GPT-assisted iteration, the architecture, and the current single-server memory limitation.
+- Native video seeking is supported by byte-range responses on the local/Render server. Vercel serves the video directly as a static asset. The file is about 1.2 MB.
 
 ## What changed in v0.4
 
@@ -33,7 +87,7 @@ Requires **Node.js 20 or newer**. There are no dependencies to install. An API k
    npm start
    ```
 
-4. Open **http://localhost:3000** on your computer and choose **Start a game**.
+4. Open **http://localhost:3000** on your computer and choose **Host a game**.
 5. Keep the terminal open while you play. Press Ctrl+C to stop.
 
 On macOS you can also double-click **Start-Alibi.command**. If macOS asks to open the downloaded script, use Terminal and `npm start` instead. On Windows, use **Start-Alibi.bat**.
@@ -119,8 +173,8 @@ Forger and Mind Reader are excluded from two-player games. Role controls appear 
 - Questions come from the built-in prompt banks and players. AI, when configured, generates house answers and small-group computer sketches. Local answer fallback may produce fewer choices when it cannot find enough relevant alternatives.
 - Unrevealed answers, drawing assignments, vote ownership, and role powers are filtered by the server for each recipient.
 - Drawing uses validated vector strokes and works with a mouse, touch, or a stylus.
-- There is no public internet deployment, database, voice chat, moderation dashboard, or automated artwork judging. Players enforce the drawing rule together.
-- 54 automated checks cover complete 2-, 3-, 4-, and 8-player games, real HTTP/SSE networking, private state, timers, simulated AI success/failure, character validation and synchronization, and rendering every game phase for eight players. They also check long-answer paging, that player clients cannot initialize music, trusted hosting origins, and hosted invite-address behavior.
+- This package supports the existing Vercel/Render deployment; these changes have not been deployed from this workspace. There is no database, voice chat, moderation dashboard, or automated artwork judging. Players enforce the drawing rule together.
+- 73 automated checks cover complete 2-, 3-, 4-, and 8-player games, real HTTP/SSE networking, private state, timers, simulated AI success/failure, character validation and synchronization, and rendering every game phase for eight players. They also check the playground’s scene progression, prop attachment and continuity, simultaneous activities, alternate scene orders, desktop/phone geometry, animation lifecycle and pause preferences, static module delivery, homepage navigation, video seeking, long-answer paging, adaptive music levels, synchronized loop sources, menu-to-host continuity, remembered mute/volume, hidden-tab and preview suspension, download failure/race recovery, that player clients cannot initialize music, trusted hosting origins, and hosted invite-address behavior.
 - The actual vector logo, character combinations, and sticker artwork were rendered and visually inspected. The browser download was blocked in this environment, so real browser layout, touch, animation, and audio playback have not been verified here. Fixed-height phone behavior needs local testing, particularly with the keyboard open and on very short screens. Live OpenAI calls remain untested without a key.
 
 ## Development and tests
@@ -140,8 +194,11 @@ npm test
 - `server.mjs`: HTTP API, server-sent event updates, room authentication, static files.
 - `public/app.js`: notebook views, character editor, private role sheets, paged ballots, submissions, transitions, scores, and touch canvas.
 - `public/characters.js`: shared avatar vocabulary, validation, and vector rendering.
+- `public/playground-scene.js`: deterministic choreography and character poses.
+- `public/playground.js`: articulated SVG rendering, measured menu anchors, and animation lifecycle.
+- `public/playground.css`: simplified homepage layout and responsive stage.
 - `public/art.js` / `public/logo.js`: original doodles, role art, and outlined Smile Moon wordmark.
-- `public/audio.js`: original host-only music and cues.
+- `public/audio.js` / `public/music/`: original menu/host soundtrack, adaptive playback, and game cues.
 - `public/fonts/`: supplied Smile Moon font, served locally.
 - `public/art/paper.svg`: lightweight procedural paper grain.
 - `public/style.css`: notebook styling, fixed-height layouts, keyboard treatment, and animation.

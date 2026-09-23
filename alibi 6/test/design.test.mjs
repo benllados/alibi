@@ -7,6 +7,7 @@ import {PARTS,LABELS,COLORS,defaultCharacter,validateCharacter,characterSvg,rand
 import {doodle,roleArt} from '../public/art.js';
 import {wordmark} from '../public/logo.js';
 import {PartyAudio} from '../public/audio.js';
+import {playgroundMarkup} from '../public/playground.js';
 
 test('Character choices survive joining, lobby edits, private snapshots, and reconnects',()=>{
  const game=new Game(),host=game.create();
@@ -35,20 +36,20 @@ test('Malformed avatar values cannot inject markup, mutate other players, or all
 
 // Template checks exercise every live phase with real server snapshots. They do
 // not simulate browser layout, canvas pointer interaction, or audio playback.
-function renderHarness(){
+function renderHarness(search=''){
  const nodes=new Map();
  const node=selector=>{if(!nodes.has(selector))nodes.set(selector,{innerHTML:'',dataset:{},classList:{add(){},remove(){},toggle(){}},querySelectorAll:()=>[],querySelector:()=>({onclick:null,focus(){}}),focus(){}});return nodes.get(selector);};
- const context=vm.createContext({console,PARTS,LABELS,COLORS,defaultCharacter,validateCharacter,characterSvg,randomCharacter,doodle,roleArt,wordmark,PartyAudio,
+ const context=vm.createContext({console,PARTS,LABELS,COLORS,defaultCharacter,validateCharacter,characterSvg,randomCharacter,doodle,roleArt,wordmark,PartyAudio,playgroundMarkup,mountPlayground:()=>({destroy(){},setQuiet(){}}),
   document:{querySelector:node,querySelectorAll:()=>[],body:{dataset:{}},activeElement:null},
-  localStorage:{getItem:()=>null},innerHeight:667,innerWidth:375,URLSearchParams,location:{search:'',origin:'http://localhost'},setTimeout:()=>0,clearTimeout(){},Map,Set,
+  localStorage:{getItem:()=>null},innerHeight:667,innerWidth:375,URLSearchParams,location:{search,origin:'http://localhost'},setTimeout:()=>0,clearTimeout(){},Map,Set,
  });
  let source=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
  source=source.replace(/^import .*;\n/gm,'');source=source.slice(0,source.indexOf('function viewport()'));
- vm.runInContext(source+`\nglobalThis.ui={set(s){state=s;optionPage=0;scorePage=0;resultTab='answers';},host:hostView,phone:phoneView,home:landing,options,role(){modal='role';renderModal();},size:pageSize,next(){optionPage++;},character(){editingCharacter=defaultCharacter();modal='character';renderModal();}};`,context);
+ vm.runInContext(source+`\nglobalThis.ui={set(s){state=s;optionPage=0;scorePage=0;resultTab='answers';},host:hostView,phone:phoneView,home:landing,options,open(which){modal=which;renderModal();},close:closeModal,role(){modal='role';renderModal();},size:pageSize,next(){optionPage++;},character(){editingCharacter=defaultCharacter();modal='character';renderModal();}};`,context);
  return {ui:context.ui,nodes};
 }
 test('Redesigned templates render a complete eight-player game with private role sheets',()=>{
- const {ui,nodes}=renderHarness();ui.home();assert.match(nodes.get('#app').innerHTML,/get in here/);assert.match(nodes.get('#app').innerHTML,/join-form/);
+ const {ui,nodes}=renderHarness();ui.home();assert.match(nodes.get('#app').innerHTML,/get in here/);assert.match(nodes.get('#app').innerHTML,/choose-join/);assert.doesNotMatch(nodes.get('#app').innerHTML,/join-form/);
  const game=new Game(),host=game.create(),seats=Array.from({length:8},(_,i)=>game.join(host.room,`Friend ${i+1}`,defaultCharacter(i))),room=game.room(host.room);
  function renderEveryone(){
   ui.set(game.snapshot(room,host.token));const hostHtml=ui.host();assert.match(hostHtml,/class="shell host/);assert.doesNotMatch(hostHtml,/id="use-power"|id="submission"/);
@@ -84,4 +85,29 @@ test('Music never initializes from a player client and creates no audio until en
 
 test('Logo keeps separate i dots for the smile transition while preserving compound glyph paths',()=>{
  const markup=wordmark();assert.equal((markup.match(/class="logo-eye"/g)||[]).length,2);assert.equal((markup.match(/class="logo-letter"/g)||[]).length,5);assert.match(markup,/class="face-circle"/);assert.match(markup,/class="face-smile"/);
+});
+
+
+test('Home separates Host and Join, while invitations and draft identity survive navigation',()=>{
+ const {ui,nodes}=renderHarness();ui.home();
+ let html=nodes.get('#app').innerHTML;
+ assert.match(html,/id="create-room"/);assert.match(html,/id="choose-join"/);
+ assert.doesNotMatch(html,/<form/);
+ nodes.get('#choose-join').onclick();
+ html=nodes.get('#app').innerHTML;assert.match(html,/id="join-form"/);assert.doesNotMatch(html,/id="create-room"/);
+ nodes.get('#room').oninput({target:{value:'WORM'}});nodes.get('#name').oninput({target:{value:'<Ben & Jac>'}});
+ nodes.get('#back-home').onclick();nodes.get('#choose-join').onclick();
+ html=nodes.get('#app').innerHTML;assert.match(html,/value="WORM"/);assert.match(html,/value="&lt;Ben &amp; Jac&gt;"/);assert.doesNotMatch(html,/<Ben/);
+ const invited=renderHarness('?room=ABCD');invited.ui.home();
+ assert.match(invited.nodes.get('#app').innerHTML,/id="join-form"/);assert.match(invited.nodes.get('#app').innerHTML,/value="ABCD"/);
+});
+
+test('Preview does not autoplay or create a room and pauses when closed',()=>{
+ const {ui,nodes}=renderHarness();ui.home();nodes.get('#watch-preview').onclick();
+ const html=nodes.get('#overlays').innerHTML;assert.match(html,/<video[^>]+controls[^>]+playsinline[^>]+preload="none"/);assert.doesNotMatch(html,/autoplay/);
+ assert.match(html,/animated walkthrough/);assert.match(html,/Read the walkthrough/);
+ let paused=0;nodes.set('#feature-video',{pause:()=>paused++});
+ ui.close();assert.equal(paused,1);assert.equal(nodes.get('#overlays').innerHTML,'');
+ ui.open('about');assert.match(nodes.get('#overlays').innerHTML,/server restart clears games/);
+ nodes.get('#about-preview').onclick();assert.match(nodes.get('#overlays').innerHTML,/id="feature-video"/);
 });
