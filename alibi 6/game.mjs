@@ -1,10 +1,10 @@
 import {validateCharacter} from './public/characters.js';
-import { randomBytes, randomInt } from 'node:crypto';
+import { randomBytes, randomInt, createHash } from 'node:crypto';
 import { generateDecoys, filterDecoys } from './decoys.mjs';
 import {drawLocal,localComputerBluffs} from './sketches.mjs';
 import {PROMPTS,DRAW_PROMPTS} from './prompts.mjs';
 
-export const TIMERS = Object.freeze({questions:60,write:30,truth:30,draw:90,vote:30});
+export const TIMERS = Object.freeze({questions:90,write:60,truth:60,draw:90,vote:30,reveal:10});
 
 const id = () => randomBytes(16).toString('hex');
 const shuffle = a => { const b = [...a]; for (let i=b.length-1;i>0;i--) { const j=randomInt(i+1); [b[i],b[j]]=[b[j],b[i]]; } return b; };
@@ -21,20 +21,20 @@ export const ROLES = [
   {id:'lucky',name:'Lucky Break',description:'Pick two answers this turn. Earn 500 if either is true.'},
 ];
 export class Game {
- constructor({now=()=>Date.now(),onChange=()=>{},aiDecoys=null,aiSketches=null,mixSeconds=8}={}) { this.rooms=new Map(); this.now=now; this.onChange=onChange; this.aiDecoys=aiDecoys; this.aiSketches=aiSketches; this.mixSeconds=mixSeconds; }
- create() { let code; do { code=Array.from({length:4},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ'[randomInt(24)]).join(''); } while(this.rooms.has(code)); const room={code,hostToken:id(),players:[],phase:'lobby',round:0,turnIndex:0,version:0,questions:{},t:null,deadline:null,created:this.now(),updated:this.now(),paused:false,usedPrompts:[]}; this.rooms.set(code,room); return {room:code,token:room.hostToken}; }
+ constructor({now=()=>Date.now(),onChange=()=>{},aiDecoys=null,aiSketches=null,mixSeconds=8,leadMs=0}={}) { this.rooms=new Map(); this.now=now; this.onChange=onChange; this.aiDecoys=aiDecoys; this.aiSketches=aiSketches; this.mixSeconds=mixSeconds; this.leadMs=leadMs; }
+ create() { let code; do { code=Array.from({length:4},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ'[randomInt(24)]).join(''); } while(this.rooms.has(code)); const room={code,hostToken:id(),players:[],phase:'lobby',round:0,turnIndex:0,version:0,questions:{},t:null,deadline:null,created:this.now(),updated:this.now(),paused:false,usedPrompts:[],receipts:new Map()}; this.rooms.set(code,room); return {room:code,token:room.hostToken}; }
  room(code) {const r=this.rooms.get(String(code).toUpperCase()); if(!r) throw Error('Room not found. Check the four-letter code.'); return r;}
  auth(room,token) { if(token===room.hostToken) return {host:true}; const p=room.players.find(p=>p.token===token); if(!p) throw Error('Your seat could not be verified. Join the room again.'); return {player:p}; }
  join(code,name,character) { const r=this.room(code); if(r.phase!=='lobby') throw Error('This game has started. Join the next one.'); if(r.players.length>=8) throw Error('This room is full.'); name=clean(name,20); if(r.players.some(p=>p.name.toLowerCase()===name.toLowerCase())) throw Error('That name is taken. Add a nickname.'); const p={id:id(),token:id(),name,score:0,role:null,used:false,color:r.players.length,character:validateCharacter(character,r.players.length)}; r.players.push(p); this.changed(r); return {room:r.code,token:p.token,playerId:p.id}; }
  changed(r) {r.version++;r.updated=this.now(); this.onChange(r);}
- setPhase(r,phase,seconds=TIMERS[phase]??null) {r.phase=phase;r.phaseDuration=seconds;r.deadline=seconds?this.now()+seconds*1000:null;r.remaining=null;}
+ setPhase(r,phase,seconds=TIMERS[phase]??null) {r.phase=phase;r.phaseDuration=seconds;r.phaseStartedAt=this.now();r.phaseStartsAt=this.now()+(seconds&&!['mixing','reveal'].includes(phase)?this.leadMs:0);r.deadline=seconds?r.phaseStartsAt+seconds*1000:null;r.remaining=null;}
  prompt(r,subject,drawing=false) {const bank=drawing?DRAW_PROMPTS:PROMPTS; let candidates=bank.map((_,i)=>i).filter(i=>drawing||!r.usedPrompts.includes(i)); if(!candidates.length)candidates=bank.map((_,i)=>i);const index=candidates[randomInt(candidates.length)];if(!drawing)r.usedPrompts.push(index);const p=r.players.find(p=>p.id===subject);return {prompt:bank[index][0].replaceAll('{name}',p.name),personalPrompt:bank[index][0].replaceAll('{name}’s','your').replaceAll('{name}', 'you').replaceAll('their','your'),decoys:shuffle(bank[index][1])};}
- start(r) {if(r.players.length<2)throw Error('At least two players are needed.'); const roles=shuffle(ROLES.filter(role=>r.players.length>2||!['forger','reader'].includes(role.id)));r.players.forEach((p,i)=>{p.score=0;p.role=roles[i];p.used=false;});r.order=shuffle(r.players.map(p=>p.id));r.round=1;r.turnIndex=0;r.questions={};r.assignments={};r.order.forEach((pid,i)=>r.assignments[pid]=r.order[(i+1)%r.order.length]);this.newTurn(r);}
+ start(r) {if(r.players.length<2)throw Error('At least two players are needed.');r.matchId=id(); const roles=shuffle(ROLES.filter(role=>r.players.length>2||!['forger','reader'].includes(role.id)));r.players.forEach((p,i)=>{p.score=0;p.role=roles[i];p.used=false;p.stats={correct:0,fooled:0,peakGap:0,comeback:0};});r.order=shuffle(r.players.map(p=>p.id));r.round=1;r.turnIndex=0;r.questions={};r.assignments={};r.order.forEach((pid,i)=>r.assignments[pid]=r.order[(i+1)%r.order.length]);this.newTurn(r);}
  newTurn(r,replacement=false) {
  const subject=r.round===3?r.finalSubjects[r.turnIndex]:r.order[r.turnIndex];
  const authored=r.round===2&&!replacement?r.questions[subject]:null;
  const source=authored?{prompt:authored.text,decoys:authored.decoys||[]}:this.prompt(r,subject,r.round===3);
- r.t={id:id(),subject,prompt:source.prompt,personalPrompt:source.personalPrompt,decoys:source.decoys,questionAuthor:authored?.author||null,truth:null,submissions:{},drawings:{},options:[],votes:{},powers:{},hints:{},deltas:{},skipped:false};
+ r.t={id:id(),subject,prompt:source.prompt,personalPrompt:source.personalPrompt,decoys:source.decoys,questionAuthor:authored?.author||null,truth:null,submissions:{},drawings:{},options:[],votes:{},powers:{},hints:{},deltas:{},ledger:{},reactions:{},skipped:false};
  if(r.round===3){r.t.artist=r.players.length===2?'computer-truth':shuffle(r.players.filter(p=>p.id!==subject))[0].id;this.setPhase(r,'truth');}else this.setPhase(r,'write');
  }
  eligible(r) {if(r.round<3)return r.players.filter(p=>p.id!==r.t.subject);if(r.players.length===2)return r.players.filter(p=>p.id!==r.t.subject);return r.players.filter(p=>p.id!==r.t.subject&&p.id!==r.t.artist);}
@@ -119,14 +119,32 @@ export class Game {
  t.mixing=null;
  this.setPhase(r,'vote');
  }
- award(r,pid,points) {const p=r.players.find(p=>p.id===pid);if(p){p.score+=points;r.t.deltas[pid]=(r.t.deltas[pid]||0)+points;}}
- reveal(r) { const t=r.t; for(const voter of this.eligible(r)){const votes=t.votes[voter.id];if(!votes){if(t.powers[voter.id]?.role==='gambler')this.award(r,voter.id,-250);continue;}const correct=votes.some(oid=>t.options.find(o=>o.id===oid)?.truth);const power=t.powers[voter.id];if(correct)this.award(r,voter.id,r.round===3?1000:power?.role==='gambler'?1000:500);else if(power?.role==='gambler')this.award(r,voter.id,-250);
- for(const oid of votes){const opt=t.options.find(o=>o.id===oid);if(!opt||opt.truth)continue;for(const owner of opt.owners){this.award(r,owner,r.round===3||t.powers[owner]?.role==='showboat'?500:250);if(t.powers[owner]?.role==='bounty'&&t.powers[owner].target===voter.id)this.award(r,owner,500);}}
- if(correct&&r.round===3){for(const pid of new Set([t.subject,t.artist]))this.award(r,pid,500);}}
- for(const [pid,power] of Object.entries(t.powers))if(power.role==='accomplice'&&t.votes[power.target]?.some(oid=>t.options.find(o=>o.id===oid)?.truth))this.award(r,pid,500);
+ award(r,pid,points,reason) {const p=r.players.find(p=>p.id===pid);if(p){p.score+=points;r.t.deltas[pid]=(r.t.deltas[pid]||0)+points;(r.t.ledger[pid]??=[]).push({points,reason});}}
+ reveal(r) {
+ const t=r.t;
+ for(const voter of this.eligible(r)){
+  const votes=t.votes[voter.id],power=t.powers[voter.id];
+  if(!votes){t.reactions[voter.id]='missed';if(power?.role==='gambler')this.award(r,voter.id,-250,'Wager: no vote');continue;}
+  const correct=votes.some(oid=>t.options.find(o=>o.id===oid)?.truth);
+  t.reactions[voter.id]=correct?'correct':'fooled';
+  if(correct){voter.stats.correct++;this.award(r,voter.id,r.round===3?1000:power?.role==='gambler'?1000:500,power?.role==='gambler'?'Won your wager':'Found the truth');}
+  else if(power?.role==='gambler')this.award(r,voter.id,-250,'Lost your wager');
+  for(const oid of votes){const opt=t.options.find(o=>o.id===oid);if(!opt||opt.truth)continue;
+   for(const owner of opt.owners){const p=r.players.find(p=>p.id===owner);if(!p)continue;p.stats.fooled++;
+    this.award(r,owner,r.round===3||t.powers[owner]?.role==='showboat'?500:250,r.round===3?'Your drawing fooled a player':t.powers[owner]?.role==='showboat'?'Showboat: fooled a player':'Your lie fooled a player');
+    if(t.powers[owner]?.role==='bounty'&&t.powers[owner].target===voter.id)this.award(r,owner,500,'Bounty: fooled your target');
+   }
+  }
+  if(correct&&r.round===3)for(const pid of new Set([t.subject,t.artist]))this.award(r,pid,500,pid===t.subject?'Your answer was recognized':'Your drawing was recognized');
+ }
+ for(const [pid,power] of Object.entries(t.powers))if(power.role==='accomplice'&&t.votes[power.target]?.some(oid=>t.options.find(o=>o.id===oid)?.truth))this.award(r,pid,500,'Accomplice: your pick found the truth');
+ for(const o of t.options)if(!o.truth&&Object.values(t.votes).some(v=>v.includes(o.id)))for(const pid of o.owners)if(r.players.some(p=>p.id===pid))t.reactions[pid]='bluffer';
+ const lead=Math.max(...r.players.map(p=>p.score));
+ for(const p of r.players){const gap=lead-p.score;p.stats.comeback=Math.max(p.stats.comeback,p.stats.peakGap-gap);p.stats.peakGap=Math.max(p.stats.peakGap,gap);}
  this.setPhase(r,'reveal');
  }
  progress(r,force=false) { const t=r.t;
+ if(r.phase==='reveal'&&force){this.next(r);return;}
  if(r.phase==='mixing'&&force){this.finishMixing(r,true);return;}
  if(r.phase==='questions'&&(force||Object.keys(r.questions).length===r.players.length)){for(const p of r.players){const target=r.assignments[p.id];if(!r.questions[target]){const generated=this.prompt(r,target);r.questions[target]={text:generated.prompt,decoys:generated.decoys,author:null};}}r.turnIndex=0;this.newTurn(r);}
  else if(r.phase==='write'&&(force||this.allSubmitted(r))){if(!t.truth){t.skipped=true;t.skipReason='No true answer was submitted. No points this turn.';this.setPhase(r,'reveal');}else this.makeOptions(r);}
@@ -142,11 +160,11 @@ export class Game {
  if(role==='reader'){if(!t.votes[data.target])throw Error('That player has not locked a vote yet.');hint={peek:[...t.votes[data.target]],target:data.target};}}
  p.used=true;t.powers[p.id]={role,target:data.target};if(hint)t.hints[p.id]=hint;
  }
- action(code,token,data) {const r=this.room(code);const {host,player:p}=this.auth(r,token);const t=r.t;const hostOnly=['start','next','advance','pause','restart','kick'];if(hostOnly.includes(data.type)&&!host)throw Error('Only the TV host can do that.');if(!hostOnly.includes(data.type)&&!p)throw Error('Join on a player device to do that.');if(r.paused&&!['pause','restart'].includes(data.type))throw Error('The host has paused the game.');if(data.turnId&&data.turnId!==t?.id)throw Error('That turn has ended. Your screen will update.');
+ action(code,token,data) {const r=this.room(code);const {host,player:p}=this.auth(r,token);const t=r.t;let receipt=null;if(data.requestId){if(typeof data.requestId!=='string'||data.requestId.length>80)throw Error('Invalid request ID.');const key=token+':'+data.requestId,hash=createHash('sha256').update(JSON.stringify(data)).digest('hex');const prior=r.receipts.get(key);if(prior){if(prior!==hash)throw Error('Request ID was already used.');return this.snapshot(r,token);}receipt={key,hash};}const hostOnly=['start','next','advance','pause','restart','kick'];if(hostOnly.includes(data.type)&&!host)throw Error('Only the TV host can do that.');if(!hostOnly.includes(data.type)&&!p)throw Error('Join on a player device to do that.');if(r.paused&&!['pause','restart'].includes(data.type))throw Error('The host has paused the game.');if(data.turnId&&data.turnId!==t?.id)throw Error('That turn has ended. Your screen will update.');
  switch(data.type){
  case 'start':if(r.phase!=='lobby')throw Error('The game has already started.');this.start(r);break;
  case 'kick':if(r.phase!=='lobby')throw Error('Players can only be removed in the lobby.');r.players=r.players.filter(p=>p.id!==data.playerId);break;
- case 'pause':if(['lobby','finished'].includes(r.phase))throw Error('There is no active game to pause.');r.paused=!r.paused;if(r.paused){r.remaining=r.deadline?Math.max(0,r.deadline-this.now()):null;r.deadline=null;}else{r.deadline=r.remaining!==null?this.now()+r.remaining:null;r.remaining=null;if(r.phase==='mixing'&&r.t.mixing?.result!==null)this.finishMixing(r);if(r.phase==='draw'&&r.t.computerResult){this.finishComputers(r,r.t.computerResult);this.progress(r);}}break;
+ case 'pause':if(['lobby','finished'].includes(r.phase))throw Error('There is no active game to pause.');r.paused=!r.paused;if(r.paused){r.remaining=r.deadline?Math.max(0,r.deadline-this.now()):null;r.leadRemaining=Math.max(0,(r.phaseStartsAt||0)-this.now());r.deadline=null;}else{r.deadline=r.remaining!==null?this.now()+r.remaining:null;r.phaseStartsAt=this.now()+(r.leadRemaining||0);r.remaining=null;if(r.phase==='mixing'&&r.t.mixing?.result!==null)this.finishMixing(r);if(r.phase==='draw'&&r.t.computerResult){this.finishComputers(r,r.t.computerResult);this.progress(r);}}break;
  case 'restart':if(r.phase!=='finished')throw Error('Finish the match before returning to the lobby.');r.phase='lobby';r.round=0;r.t=null;r.deadline=null;r.paused=false;r.players.forEach(p=>{p.score=0;p.role=null;p.used=false;});break;
  case 'next':this.next(r);break;
  case 'advance':if(['lobby','reveal','finished'].includes(r.phase))throw Error('There is no timer to end.');this.progress(r,true);break;
@@ -159,19 +177,20 @@ export class Game {
  case 'truth':{
  if(r.phase!=='truth'||p.id!==t.subject)throw Error('It is not your turn to answer.');
  const answer=clean(data.text,80);
- if(r.players.length===2&&!this.aiSketches&&!drawLocal(answer))throw Error('The local computer artist cannot sketch that answer yet. Try a concrete object, animal, or place, choose another question, or enable AI in .env.');
+ if(r.players.length===2&&!this.aiSketches&&!drawLocal(answer))throw Error('The local computer artist cannot sketch that answer yet. Try a concrete object, animal, or place, or choose another question.');
  t.truth=answer;t.drawingIssue=null;this.setPhase(r,'draw');this.startComputers(r);break;
  }
  case 'drawing':if(r.phase!=='draw'||!this.artists(r).some(a=>a.id===p.id))throw Error('You are not drawing this turn.');if(t.drawings[p.id])throw Error('Your drawing is already locked.');t.drawings[p.id]=validateDrawing(data.strokes);this.progress(r);break;
  case 'power':this.power(r,p,data);break;
  case 'vote':{if(r.phase!=='vote'||!this.eligible(r).some(v=>v.id===p.id))throw Error('You are not voting this turn.');if(t.votes[p.id])throw Error('Your vote is already locked.');const votes=data.choices;if(!Array.isArray(votes)||!votes.length||votes.length>(t.powers[p.id]?.role==='lucky'?2:1)||new Set(votes).size!==votes.length)throw Error('Choose a valid answer.');for(const oid of votes){const opt=t.options.find(o=>o.id===oid);if(!opt||opt.owners.includes(p.id)||t.hints[p.id]?.eliminated===oid)throw Error('You cannot vote for that answer.');}t.votes[p.id]=votes;this.progress(r);break;}
  default:throw Error('Unknown action.');}
- this.changed(r);return this.snapshot(r,token);
+ if(receipt){r.receipts.set(receipt.key,receipt.hash);if(r.receipts.size>256)r.receipts.delete(r.receipts.keys().next().value);}this.changed(r);return this.snapshot(r,token);
  }
  tick() {for(const r of this.rooms.values()){if(!r.paused&&r.deadline&&r.deadline<=this.now()){this.progress(r,true);this.changed(r);}if(this.now()-r.updated>24*60*60*1000)this.rooms.delete(r.code);}}
- snapshot(r,token) {const {host,player:p}=this.auth(r,token);const t=r.t;const revealed=['reveal','finished'].includes(r.phase);const publicPlayer=p=>({id:p.id,name:p.name,score:p.score,color:p.color,character:p.character,...(r.phase==='finished'?{role:p.role}:{}),ready:r.phase==='questions'?!!r.questions[r.assignments[p.id]]:r.phase==='write'?!!t?.submissions[p.id]:r.phase==='draw'?!!t?.drawings[p.id]:r.phase==='vote'?!!t?.votes[p.id]:false});
- const state={code:r.code,version:r.version,host:!!host,phase:r.phase,round:r.round,turnIndex:r.turnIndex,turnCount:r.round===3?r.finalSubjects?.length:r.players.length,deadline:r.deadline,phaseDuration:r.phaseDuration,remaining:r.remaining,serverNow:this.now(),paused:r.paused,players:r.players.map(publicPlayer),...(host?{aiEnabled:!!this.aiDecoys}: {})};
- if(t)state.turn={id:t.id,subject:t.subject,prompt:t.prompt,skipped:t.skipped,skipReason:t.skipReason,computerCount:t.computerCount||0,computersReady:!t.computersPending,voters:this.eligible(r).map(p=>p.id),writers:r.players.length===2?[t.subject]:r.players.map(p=>p.id),artists:r.phase==='draw'?this.artists(r).map(p=>p.id):undefined,options:['vote','reveal','finished'].includes(r.phase)?t.options.map(o=>({id:o.id,text:o.text,drawing:o.drawing,owned:!!p&&o.owners.includes(p.id),...(revealed?{truth:o.truth,owners:o.owners,voters:Object.entries(t.votes).filter(([,ids])=>ids.includes(o.id)).map(([pid])=>pid)}:{})})):[],...(revealed?{truth:t.truth,artist:t.artist,deltas:t.deltas,questionAuthor:t.questionAuthor,...(host?{decoySource:t.decoySource}: {})}:{})};
+ snapshot(r,token) {const {host,player:p}=this.auth(r,token);const t=r.t;const revealed=['reveal','finished'].includes(r.phase);const publicPlayer=p=>({id:p.id,name:p.name,score:p.score,color:p.color,character:p.character,connected:r.presence?.[p.id]??null,...(r.phase==='finished'?{role:p.role,stats:p.stats}:{}),ready:r.phase==='questions'?!!r.questions[r.assignments[p.id]]:r.phase==='write'?!!t?.submissions[p.id]:r.phase==='draw'?!!t?.drawings[p.id]:r.phase==='vote'?!!t?.votes[p.id]:false});
+ const state={code:r.code,matchId:r.matchId,version:r.version,host:!!host,phase:r.phase,round:r.round,turnIndex:r.turnIndex,turnCount:r.round===3?r.finalSubjects?.length:r.players.length,deadline:r.deadline,phaseDuration:r.phaseDuration,phaseStartedAt:r.phaseStartedAt,phaseStartsAt:r.phaseStartsAt,remaining:r.remaining,serverNow:this.now(),paused:r.paused,players:r.players.map(publicPlayer),...(host?{aiEnabled:!!this.aiDecoys}: {})};
+ if(t)state.turn={id:t.id,subject:t.subject,prompt:t.prompt,skipped:t.skipped,skipReason:t.skipReason,computerCount:t.computerCount||0,computersReady:!t.computersPending,voters:this.eligible(r).map(p=>p.id),writers:r.players.length===2?[t.subject]:r.players.map(p=>p.id),artists:r.phase==='draw'?this.artists(r).map(p=>p.id):undefined,options:['vote','reveal','finished'].includes(r.phase)?t.options.map(o=>({id:o.id,text:o.text,drawing:o.drawing,owned:!!p&&o.owners.includes(p.id),...(revealed?{truth:o.truth,owners:o.owners,voters:Object.entries(t.votes).filter(([,ids])=>ids.includes(o.id)).map(([pid])=>pid)}:{})})):[],...(revealed?{truth:t.truth,artist:t.artist,deltas:t.deltas,ledger:t.ledger,reactions:t.reactions,questionAuthor:t.questionAuthor,...(host?{decoySource:t.decoySource}: {})}:{})};
+ if(r.phase==='finished'){state.awards=[['Most players fooled','fooled'],['Most correct guesses','correct'],['Biggest comeback','comeback']].flatMap(([title,key])=>{const value=Math.max(...r.players.map(p=>p.stats?.[key]||0));return value>0?[{title,value,players:r.players.filter(p=>p.stats?.[key]===value).map(p=>p.id)}]:[];});}
  if(p){state.me={id:p.id,role:p.role,used:p.used,questionTarget:r.phase==='questions'?r.assignments[p.id]:null,questionSubmitted:r.phase==='questions'?!!r.questions[r.assignments[p.id]]:false,submitted:t?!!t.submissions[p.id]:false,drawingSubmitted:!!t?.drawings[p.id],voted:!!t?.votes[p.id],votes:t?.votes[p.id]||[],power:t?.powers[p.id],hint:t?.hints[p.id],isSubject:p.id===t?.subject,personalPrompt:r.phase==='truth'&&p.id===t?.subject?t.personalPrompt:undefined,drawingIssue:p.id===t?.subject?t.drawingIssue:undefined,canVote:r.phase==='vote'&&this.eligible(r).some(v=>v.id===p.id),canDraw:r.phase==='draw'&&this.artists(r).some(v=>v.id===p.id),informed:r.phase==='draw'&&t?.artist===p.id};if(t?.truth&&(p.id===t.subject||(r.phase==='draw'&&p.id===t.artist)))state.me.truth=t.truth;}
  return state;
  }

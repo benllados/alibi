@@ -105,12 +105,18 @@ export function inferAnswerStyle(references) {
     if(parts.every(p=>p[i].toLowerCase()===parts[0][i].toLowerCase()))shared.push(parts[0][i]);else break;
   }
   const prefix=shared.join(' ');
+  const endings=parts.map(p=>p.map(w=>w.replace(/[.!?]+$/,'')));
+  const tail=[];
+  if(parts.length>=2)for(let n=1;n<=Math.min(3,...parts.map(p=>p.length-shared.length-1));n++){
+    if(endings.every(p=>p.at(-n).toLowerCase()===endings[0].at(-n).toLowerCase()))tail.unshift(endings[0].at(-n));else break;
+  }
+  const suffix=tail.join(' ');
   const content=references.map(a=>shared.length?a.split(/\s+/).slice(shared.length).join(' '):a);
   const terminal=references.map(a=>a.match(/[.!?]+$/)?.[0]||'');
   const punctuation=terminal.find(p=>terminal.filter(v=>v===p).length>=majority)??'';
   const lengths=references.map(words).sort((a,b)=>a-b);
   return {
-    prefix,
+    prefix,suffix,
     casing:references.filter(a=>/[a-z]/i.test(a)&&a===a.toUpperCase()).length>=majority?'upper':references.filter(a=>a===a.toLowerCase()).length>=majority?'lower':references.filter(a=>/^[A-Z]/.test(a)).length>=majority?'sentence':'mixed',
     bare:content.filter(a=>!/^(my|our|their|a|an|the|at|in|on)\b/i.test(a)).length>=majority,
     firstPerson:content.filter(a=>/^my\b/i.test(a)).length>=majority,
@@ -131,6 +137,7 @@ export function matchAnswerStyle(candidate, references) {
   else if(style.bare&&!/^(?:The|A|An)\s+[A-Z]/.test(result))result=result.replace(/^(?:my|our|their|a|an|the)\s+/i,'');
   if(style.prefix)result=style.prefix+' '+result;
   else if(style.locationPrefix&&!/^(at|in|on)\b/i.test(result))result=style.locationPrefix+' '+result;
+  if(style.suffix&&!result.toLowerCase().endsWith(' '+style.suffix.toLowerCase()))result+=' '+style.suffix;
   if(style.casing==='upper')result=result.toUpperCase();
   else if(style.casing==='lower')result=result.toLowerCase();
   else if(style.casing==='sentence')result=result[0].toUpperCase()+result.slice(1);
@@ -146,7 +153,7 @@ export function filterDecoys(context,candidates,{preserveOrder=false}={}) {
     const k=key(text);if(!k||existing.has(k)||text.length>140)return false;
     if([...existing].some(other=>other.length>=4&&k.length>=4&&(k.includes(other)||other.includes(k))))return false;
     // Reject a conspicuously long answer when the group is using short phrases.
-    if(words(text)>Math.max(style.maxWords+2,style.medianWords*2))return false;
+    if(words(text)>Math.max(style.maxWords+2,style.medianWords*2)+(style.suffix?words(style.suffix):0))return false;
     existing.add(k);return true;
   });
   if(!preserveOrder)result.sort((a,b)=>Math.abs(words(a)-style.medianWords)-Math.abs(words(b)-style.medianWords));

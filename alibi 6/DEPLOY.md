@@ -1,6 +1,6 @@
 # Publish Alibi with Vercel + Render
 
-This v0.9.0 package is prepared for a Vercel website backed by one Render Node web service. Vercel serves `public/` and forwards `/api/*` to Render. Render owns rooms, game timers, and live server-sent events. There is no build step or database.
+This v0.11.1 package is prepared for a Vercel website backed by one Render Node web service. Vercel serves `public/` and forwards `/api/*` to Render. Render owns rooms, game timers, and live server-sent events. There is no build step or database.
 
 The current game stores rooms in a single process. Moving `server.mjs` unchanged into Vercel Functions would not preserve one shared game state across instances or restarts. This deployment keeps the existing game architecture. Nothing has been deployed from this package yet.
 
@@ -111,7 +111,7 @@ Your laptop no longer needs to run the local Node server. Share the Vercel produ
 - **Changes do not appear.** Commit and Push origin in GitHub Desktop, then check each service's deployment status. Both services are connected to the same repository.
 - **Rooms split or are intermittently missing.** Verify you have exactly one Render instance and all clients are using the same production site. This prototype has no shared database or distributed room routing.
 
-Local verification: 73 automated tests pass, including playground scenes and lifecycle, homepage navigation, video byte ranges, trusted/untrusted hosting origins, hosted invite-address behavior, server-sent events, private game state, complete matches, and the existing design checks. The actual Vercel-to-Render deployment must be verified after your accounts and URLs are configured.
+Local verification: 96 automated tests pass, including playground scenes and lifecycle, homepage navigation, video byte ranges, trusted/untrusted hosting origins, hosted invite-address behavior, server-sent events, private game state, complete matches, and the existing design checks. The actual Vercel-to-Render deployment must be verified after your accounts and URLs are configured.
 
 ## Official setup references
 

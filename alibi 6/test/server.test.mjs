@@ -46,3 +46,8 @@ test('Original music is served as seekable audio; synthesis source and reference
  }
  for(const path of ['/tools/compose-theme.py','/tools/audio-work/bed.wav','/upload/The%20Orb%20Of%20Dreamers.mp3'])assert.equal((await fetch(base+path)).status,404);
 });
+
+
+test('Every live-game module and stylesheet is served with the expected content type',async()=>{
+ for(const path of ['/gameplay-cast.js','/gameplay-ui.js','/qr.js','/gameplay.css']){const response=await fetch(base+path);assert.equal(response.status,200,path);assert.match(response.headers.get('content-type'),path.endsWith('.css')?/text\/css/:/text\/javascript/);assert.ok((await response.text()).length>200);}
+});

@@ -108,7 +108,7 @@ export class PartyAudio {
  }
  effect(kind){
   if(!this.host||!this.audible||!this.ctx)return;
-  const t=this.ctx.currentTime;
+  const t=this.ctx.currentTime;if(kind==='submit'&&t-(this.lastSubmit??-10)<.22)return;if(kind==='submit')this.lastSubmit=t;
   const notes={join:[440,587.33],submit:[493.88,587.33],reveal:[293.66,369.99,440,587.33],round:[369.99,440,587.33],finale:[185,220,293.66,369.99,440],win:[293.66,369.99,440,587.33,739.99,880],tick:[493.88]}[kind]||[440];
   notes.forEach((n,i)=>this.tone(n,t+i*.095,kind==='tick'?.065:.32,kind==='tick'?.07:.12,'sine'));
  }

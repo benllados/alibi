@@ -24,11 +24,6 @@
 .playground-layer * { pointer-events: none; }
 .playground-back { z-index: 1; }
 .playground-front { z-index: 4; }
-.playground-toggle { align-self: flex-end; position: relative; z-index: 5; border: 0; background: none; padding: 4px 3px; margin-top: 2px; color: var(--blue); font: 10px/1.3 var(--mono); min-height: 23px; cursor: pointer; }
-.playground-toggle span { font: 13px/1 sans-serif; margin-right: 5px; }
-.playground-toggle:hover { text-decoration: underline; text-underline-offset: 3px; }
-.playground-toggle:focus-visible { outline: 2px dashed var(--blue); outline-offset: 2px; }
-.playground-toggle:disabled { cursor: default; opacity: .65; }
 .home-playground .home-footer { padding-top: 0; margin-top: 0; min-height: 31px; }
 @media (min-width: 681px) and (max-height: 820px) {
  .home-playground { padding-top: 16px; padding-bottom: 12px; }
@@ -74,7 +69,6 @@
  .home-playground .preview-button small { font-size: 8px; }
  .home-playground .join-arrow { font-size: 13px; }
  .playground-space { height: 123px; margin-top: 0; }
- .playground-toggle { font-size: 8px; min-height: 18px; padding: 2px; }
  .home-playground .home-footer { min-height: 23px; }
 }
 @media (max-width: 680px) {
@@ -94,7 +88,6 @@
  .home-playground .preview-button b { font-size: 19px; }
  .home-playground .preview-button small { font-size: 8px; margin-top: 1px; }
  .playground-space { height: 88px; margin-top: 7px; }
- .playground-toggle { font-size: 8px; min-height: 20px; padding: 3px; margin: 0; }
  .home-playground .home-footer { margin-top: 1px; min-height: 26px; }
  .home-playground .home-footer nav { width: 100%; justify-content: space-between; gap: 10px; }
  .home-playground .home-footer .text-button { font-size: 12px; }
@@ -123,15 +116,14 @@
  .home-playground.is-joining .playground-space { height: 62px; }
 }
 .keyboard-open .home-playground .playground-space,
-.keyboard-open .home-playground .playground-layer,
-.keyboard-open .home-playground .playground-toggle { display: none; }
+.keyboard-open .home-playground .playground-layer { display: none; }
 @media (prefers-reduced-motion: reduce) {
  .home-playground .home-star { transform: none; }
 }
 /* On phones the two action labels already introduce this sheet. */
 @media (max-width: 680px) {
  .home-playground.is-choosing .join-sheet h2 { display: none; }
- .home-playground .home-footer .tiny-smile { font-size: 0; flex: 0 0 25px; }
+ .home-playground .home-footer .footer-note { display: none; }
 }
 /* A sideways phone uses the same two-column composition as a small laptop. */
 @media (max-width: 680px) and (max-height: 500px) and (orientation: landscape) {
@@ -146,11 +138,22 @@
  .home-playground .join-sheet .btn { min-height: 31px; padding: 4px 9px; font-size: 18px; }
  .home-playground .home-top { min-height: 18px; }
  .playground-space { height: 62px; }
- .playground-toggle { min-height: 17px; padding: 1px; }
  .home-playground .home-footer { min-height: 21px; }
  .home-playground .home-footer nav { width: auto; gap: 22px; }
 }
 
-/* Keep menu music available without adding another panel to the landing page. */
-.home-top .edition{display:flex;align-items:center;gap:8px}.home-top .edition>span{margin:0 3px}.home-top .sound-button{font-size:14px;white-space:nowrap;margin-left:5px}.audio-settings #audio-status:empty{display:none}
-@media(max-width:680px){.home-top .edition{font-size:9px;gap:3px}.home-top .sound-button{font-size:12px;padding:4px 6px}.home-top .tape-label{max-width:45%;font-size:9px}}
+/* Keep the music control, without the old edition labels. */
+.home-playground .home-top { justify-content: flex-end; }
+.home-top .sound-button { font-size: 14px; white-space: nowrap; }
+.audio-settings #audio-status:empty { display: none; }
+.home-playground .preview-divider { height: 1px; background: #cfc5b2; margin: 0 0 18px; }
+.footer-note { font: 10px/1.4 var(--mono); }
+.host-brand { display: flex; align-items: center; gap: 20px; }
+.host-brand .back-menu { font-size: 17px; white-space: nowrap; }
+@media (max-width: 1000px) { .footer-note { font-size: 8px; } }
+@media (max-width: 680px) {
+ .home-top .sound-button { font-size: 12px; padding: 4px 6px; }
+ .home-playground .preview-divider { margin-bottom: 13px; }
+ .host-brand { flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 0; }
+ .host-brand .back-menu { font-size: 14px; padding: 2px 0; }
+}

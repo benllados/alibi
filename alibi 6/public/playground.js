@@ -14,9 +14,9 @@ const mouths={smile:'M95 95Q109 110 126 94',surprise:'M106 94C93 94 94 114 108 1
 const palm={open:'M-5 6L-8 0Q-12 -7-8 -7L-4 -3L-5 -12Q-4 -16-1 -13L1 -5L3 -15Q6 -17 7 -12L6 -3L11 -9Q15 -10 13 -5L8 5Q3 11-5 6Z',fist:'M-6 6L-9 -2Q-10 -9-4 -9L7 -9Q12 -8 10 -1L6 7Z',grip:'M-6 6Q-13 0-8 -7Q-4 -10-1 -5L-3 0L4 -2Q9 -9 12 -5Q15 0 6 7Z',point:'M-5 6L-8 -4Q-9 -10-4 -8L-1 -4L-1 -19Q2 -24 5 -19L5 -4Q12 -6 11 0L7 7Z',clap:'M-6 8L-8 -11Q-6 -16-3 -11L-1 -15Q2 -18 4 -12L6 -12Q9 -11 9 -7L8 5Z',press:'M-8 4L-11 -2Q-12 -6-7 -5L-2 -3L7 -6Q13 -7 13 -3L8 6Z'};
 function joint(a,b,bend,length){const dx=b[0]-a[0],dy=b[1]-a[1],d=Math.max(.01,Math.hypot(dx,dy)),l=Math.max(length,d*.53),h=Math.sqrt(Math.max(0,l*l-d*d/4));return [(a[0]+b[0])/2-dy/d*h*bend,(a[1]+b[1])/2+dx/d*h*bend];}
 function limb(p,side){const a=[side?137:84,135],b=p.hands[side],e=joint(a,b,side?-1:1,31);return `M${a}L${e.map(round)}L${b.map(round)}`;}
-function foot(p,side){const q=point(p,side?128:94,177),hip=[(q.x-p.x)/p.s+110,(q.y-p.y)/p.s+208],end=p.feet[side],knee=joint(hip,end,side?-1:1,23);const toe=end[0]+(p.turn>.4?12:p.turn<-.4?-12:side?14:-14);return `M${hip.map(round)}L${knee.map(round)}L${end.map(round)}L${round(toe)} ${round(end[1])}`;}
+function foot(p,side){const q=point(p,side?128:94,177),hip=[(q.x-p.x)/p.s+110,(q.y-p.y)/p.s+208],end=p.feet[side],knee=p.seated?[side?153:66,hip[1]+5]:joint(hip,end,side?-1:1,23);const toe=end[0]+(p.turn>.4?12:p.turn<-.4?-12:side?14:-14);return `M${hip.map(round)}L${knee.map(round)}L${end.map(round)}L${round(toe)} ${round(end[1])}`;}
 function capePath(p){const swing=p.cape;return `M86 124Q${69+swing*.25} 151 ${48+swing} 187Q${80+swing*.9} ${174+Math.abs(swing)*.2} 107 177Q${141+swing*.8} ${182+Math.abs(swing)*.1} ${170+swing} 185Q${153+swing*.2} 147 136 125Z`;}
-function actorMarkup(i){const a=parts[i],outfit=i===3?a.outfit.replace(/^<path[^>]+\/>/,''):a.outfit,hat=i===2?`<g data-part="flower">${a.hats[a.a.hat]}</g>`:a.hats[a.a.hat];return `<g data-actor="${i}" fill="none" stroke="${ink}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path data-part="leg0" stroke-width="6"/><path data-part="leg1" stroke-width="6"/><g data-part="body">${i===3?'<path data-part="cape" fill="#d7573d"/>':''}${outfit}<path data-part="arm0" stroke-width="4.8"/><path data-part="arm1" stroke-width="4.8"/><g data-part="head"><path d="${a.heads[a.a.head]}" fill="${a.paper}"/><g data-part="face"><g data-part="eyes" fill="${ink}" stroke="none"><ellipse data-part="eye0" cx="87" cy="73" rx="4" ry="6"/><ellipse data-part="eye1" cx="131" cy="73" rx="4" ry="6"/></g><path data-part="brows" stroke-width="2.6"/><path data-part="mouth"/><path data-part="nose" stroke-width="2"/><g data-part="cheeks" opacity="0" fill="#d7573d" stroke="none"><ellipse cx="72" cy="91" rx="9" ry="4"/><ellipse cx="147" cy="91" rx="9" ry="4"/></g><g data-part="glasses">${a.glasses[a.a.glasses]}</g>${a.hair[a.a.hair]}</g><g data-part="hat">${hat}</g><g data-part="magic" opacity="0">${MAGIC_HAT}</g></g><g data-part="wand" opacity="0"><path d="M0 0L-6 -60" stroke-width="7"/><path d="M-5 -47L-6 -60" stroke="#fffaf0" stroke-width="5"/></g></g></g>`;}
+function actorMarkup(i,a=parts[i]){const caped=a.a.outfit==='cape',outfit=caped?a.outfit.replace(/^<path[^>]+\/>/,''):a.outfit,hat=i===2?`<g data-part="flower">${a.hats[a.a.hat]}</g>`:a.hats[a.a.hat];return `<g data-actor="${i}" fill="none" stroke="${ink}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path data-part="leg0" stroke-width="6"/><path data-part="leg1" stroke-width="6"/><g data-part="body">${caped?'<path data-part="cape" fill="#d7573d"/>':''}${outfit}<path data-part="arm0" stroke-width="4.8"/><path data-part="arm1" stroke-width="4.8"/><g data-part="head"><path d="${a.heads[a.a.head]}" fill="${a.paper}"/><g data-part="face"><g data-part="eyes" fill="${ink}" stroke="none"><ellipse data-part="eye0" cx="87" cy="73" rx="4" ry="6"/><ellipse data-part="eye1" cx="131" cy="73" rx="4" ry="6"/></g><path data-part="brows" stroke-width="2.6"/><path data-part="mouth"/><path data-part="nose" stroke-width="2"/><g data-part="cheeks" opacity="0" fill="#d7573d" stroke="none"><ellipse cx="72" cy="91" rx="9" ry="4"/><ellipse cx="147" cy="91" rx="9" ry="4"/></g><g data-part="glasses">${a.glasses[a.a.glasses]}</g>${a.hair[a.a.hair]}</g><g data-part="hat">${hat}</g><g data-part="magic" opacity="0">${MAGIC_HAT}</g></g><g data-part="wand" opacity="0"><path d="M0 0L-6 -60" stroke-width="7"/><path d="M-5 -47L-6 -60" stroke="#fffaf0" stroke-width="5"/></g></g></g>`;}
 function handsMarkup(i){return `<g data-hands="${i}" stroke="${ink}" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" fill="${paper}"><path data-palm="0"/><path data-palm="1"/></g>`;}
 function actorValues(p,i){const heavy=['focused','strained'],raised=['surprise','panic','pleading','worried'];return {
  root:{transform:rootTransform(p)},body:{transform:bodyTransform(p)},leg0:{d:foot(p,0)},leg1:{d:foot(p,1)},arm0:{d:limb(p,0)},arm1:{d:limb(p,1)},head:{transform:headTransform(p)},face:{transform:`translate(${round(p.turn*8)} 0)`},
@@ -46,7 +46,7 @@ const legPath=p=>{const e=(p.legs||0)*14;return `M-27 8L${-37-e} ${20+e}L-17 23M
 function paperPaths(fold=0){const stages=[[-32,-21,32,-21,32,21,-32,21],[-32,-21,32,21,-32,21,-32,21],[-32,-21,32,1,-32,21,-16,1],[-36,-22,41,0,-33,20,-18,1],[-36,-22,41,0,-33,20,-18,1]];const n=Math.min(3,Math.floor(fold)),r=fold-n,q=stages[n].map((a,i)=>a+(stages[n+1][i]-a)*r);return {shape:`M${q.slice(0,2)}L${q.slice(2,4)}L${q.slice(4,6)}L${q.slice(6,8)}Z`,flap:`M${q.slice(0,2)}L${q.slice(6,8)}L${q.slice(2,4)}Z`,crease:`M${q.slice(0,2)}L${q.slice(4,6)}`};}
 function propsMarkup(back=false){return (back?['plane']:Object.keys(propArt)).map(key=>`<g data-prop="${key}" opacity="0" fill="none" stroke="${ink}" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round">${propArt[key]}</g>`).join('');}
 function trailMarkup(){return `<g data-trail="">${Array.from({length:11},()=>'<circle r="1.25" fill="#4d7c9d" opacity="0"/>').join('')}</g>`;}
-export function playgroundMarkup(){return '<div class="playground-space" aria-hidden="true"></div><button class="playground-toggle" type="button" aria-label="Pause character animation" aria-pressed="false"><span aria-hidden="true">Ⅱ</span> pause the nonsense</button>';}
+export function playgroundMarkup(){return '<div class="playground-space" aria-hidden="true"></div>';}
 function svgMarkup(back=false){return `<svg class="playground-layer ${back?'playground-back':'playground-front'}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" preserveAspectRatio="none">${back?'':`<path data-floor="" fill="none" stroke="#81765f" stroke-width="1" opacity=".2"/><g data-shadows="">${CAST.map(()=>'<ellipse rx="39" ry="4.5" fill="#514b36" opacity=".12"/>').join('')}</g>${CAST.map((_,i)=>actorMarkup(i)).join('')}`}${trailMarkup()}${propsMarkup(back)}${back?'':`${CAST.map((_,i)=>handsMarkup(i)).join('')}<g data-effects="">${Array.from({length:3},()=>'<path fill="none" stroke-width="2" stroke-linecap="round" opacity="0" d="M0 -12L0 -24M10 -7L21 -15M12 5L24 10M3 12L6 24M-10 7L-21 15M-11 -5L-23 -10"/>').join('')}</g><g data-captions="">${Array.from({length:2},()=>`<text text-anchor="middle" fill="${ink}" opacity="0" font-family="'Smile Moon', cursive" font-size="22"/>`).join('')}</g>`}</svg>`;}
 function refs(svg,back){return {svg,actors:back?[]:[...svg.querySelectorAll('[data-actor]')].map(root=>({root,...Object.fromEntries([...root.querySelectorAll('[data-part]')].map(n=>[n.dataset.part,n]))})),hands:[...svg.querySelectorAll('[data-hands]')].map(g=>[...g.querySelectorAll('[data-palm]')]),props:Object.fromEntries([...svg.querySelectorAll('[data-prop]')].map(n=>[n.dataset.prop,n])),trail:[...svg.querySelectorAll('[data-trail] circle')],shadows:[...svg.querySelectorAll('[data-shadows] ellipse')],floor:svg.querySelector('[data-floor]'),captions:[...svg.querySelectorAll('[data-captions] text')],effects:[...svg.querySelectorAll('[data-effects] path')]};}
 function handValues(p,side){const q=point(p,...p.hands[side]);return {d:palm[p.grips[side]]||palm.open,transform:`translate(${round(q.x)} ${round(q.y)}) scale(${round(p.s)}) rotate(${round(p.lean+p.wrists[side])})`};}
@@ -68,22 +68,21 @@ function paint(R,f,L,back){attr(R.svg,'viewBox',`0 0 ${round(L.width)} ${round(L
 // Review frames use these same paths and transforms. This validates artwork and
 // choreography; browser layout is a separate check.
 function applyMarkup(markup,token,values){return markup.replace(token,token+' '+Object.entries(values).map(([k,v])=>`${k}="${v}"`).join(' '));}
-export function renderSceneSvg(L,f,{background=''}={}){
- let actors='',hands='';for(let i=0;i<4;i++){const p=f.actors[i],values=actorValues(p,i);let m=actorMarkup(i);for(const [key,v] of Object.entries(values)){const token=key==='root'?`data-actor="${i}"`:`data-part="${key}"`;m=m.replace(new RegExp(`(${token}) opacity="[^"]*"`),'$1');m=applyMarkup(m,token,v);}actors+=m;let h=handsMarkup(i);for(let side=0;side<2;side++)h=applyMarkup(h,`data-palm="${side}"`,handValues(p,side));hands+=h;}
+export function renderSceneSvg(L,f,{background='',characters=null}={}){
+ let actors='',hands='';for(let i=0;i<4;i++){const p=f.actors[i],values=actorValues(p,i);let m=actorMarkup(i,characters?characterParts(characters[i]):parts[i]);for(const [key,v] of Object.entries(values)){const token=key==='root'?`data-actor="${i}"`:`data-part="${key}"`;m=m.replace(new RegExp(`(${token}) opacity="[^"]*"`),'$1');m=applyMarkup(m,token,v);}actors+=m;let h=handsMarkup(i);for(let side=0;side<2;side++)h=applyMarkup(h,`data-palm="${side}"`,handValues(p,side));hands+=h;}
  const objects=Object.entries(f.props).map(([key,p])=>{let m=propArt[key]||'';if(key==='frog'||key==='frogFeet')m=applyMarkup(m,'data-frog-legs=""',{d:legPath(p)});if(key==='frog')m=applyMarkup(m,'data-frog-eyes=""',{transform:`translate(0 ${13*(1-p.blink)}) scale(1 ${p.blink})`});if(key==='paper'){const v=paperPaths(p.fold);m=applyMarkup(m,'data-paper-shape=""',{d:v.shape});m=applyMarkup(m,'data-paper-flap=""',{d:v.flap});m=applyMarkup(m,'data-paper-fold=""',{d:v.crease});}if(key==='receipt'&&p.variant)m=m.replace('opacity="0"','opacity="1"');return `<g transform="${transform(p)}" opacity="${p.opacity??1}" fill="none" stroke="${ink}" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round">${m}</g>`;}).join('');
  const trails=f.trail.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="1.3" fill="#4d7c9d" opacity="${p.opacity}"/>`).join('');
  const effects=f.effects.map(e=>`<path d="M0 -12L0 -24M10 -7L21 -15M12 5L24 10M3 12L6 24M-10 7L-21 15M-11 -5L-23 -10" fill="none" stroke="${e.color}" stroke-width="2" opacity="${e.opacity}" transform="translate(${e.x} ${e.y}) scale(${e.r/24}) rotate(${e.angle})"/>`).join('');
  return `<svg xmlns="http://www.w3.org/2000/svg" width="${L.width}" height="${L.height}" viewBox="0 0 ${L.width} ${L.height}">${background}<path d="M${L.stage.x} ${L.stage.y+L.stage.height}H${L.stage.x+L.stage.width}" stroke="#81765f" opacity=".3"/>${actors}${trails}${objects}${hands}${effects}</svg>`;
 }
 export function mountPlayground(home,{quiet=false,env=globalThis}={}){
- const doc=home.ownerDocument||env.document,stage=home.querySelector('.playground-space'),toggle=home.querySelector('.playground-toggle');
- if(!stage||!toggle)return {destroy(){},setQuiet(){}};
+ const doc=home.ownerDocument||env.document,stage=home.querySelector('.playground-space');
+ if(!stage)return {destroy(){},setQuiet(){}};
  home.insertAdjacentHTML('afterbegin',svgMarkup(true)+svgMarkup(false));
  const front=refs(home.querySelector('.playground-front'),false),back=refs(home.querySelector('.playground-back'),true);
  const star=home.querySelector('.home-star'),pencil=home.querySelector('.home-pencil');
  const motion=env.matchMedia('(prefers-reduced-motion: reduce)');
- let disposed=false,paused=false,clock=0,last=0,request=0,L=null,quietTime=0;
- try{paused=env.localStorage.getItem('alibi-playground-paused')==='true';}catch{}
+ let disposed=false,clock=0,last=0,request=0,L=null,quietTime=0;
  const measure=()=>{
   if(disposed)return;
   const root=home.getBoundingClientRect(),rect=selector=>{const r=home.querySelector(selector).getBoundingClientRect();return {x:r.left-root.left,y:r.top-root.top,width:r.width,height:r.height};};
@@ -98,7 +97,7 @@ export function mountPlayground(home,{quiet=false,env=globalThis}={}){
   star?.style.setProperty('--playground-star-tilt',`${f.starTilt}deg`);
   pencil?.style.setProperty('--playground-pencil-opacity',f.pencilAway?'0':'1');
  };
- const running=()=>!disposed&&!paused&&!motion.matches&&!doc.hidden;
+ const running=()=>!disposed&&!motion.matches&&!doc.hidden;
  const tick=now=>{
   request=0;if(!running())return;
   if(last){const dt=Math.min((now-last)/1000,.1);if(quiet)quietTime+=dt;else clock+=dt;}
@@ -106,20 +105,28 @@ export function mountPlayground(home,{quiet=false,env=globalThis}={}){
  };
  const sync=()=>{
   if(request)env.cancelAnimationFrame(request);request=0;last=0;
-  const stopped=paused||motion.matches;
-  toggle.disabled=motion.matches;
-  toggle.setAttribute('aria-pressed',String(stopped));
-  toggle.setAttribute('aria-label',motion.matches?'Animation off: reduced motion preference':paused?'Resume character animation':'Pause character animation');
-  toggle.innerHTML=motion.matches?'motion off':paused?'<span aria-hidden="true">▷</span> resume the nonsense':'<span aria-hidden="true">Ⅱ</span> pause the nonsense';
   draw();if(running())request=env.requestAnimationFrame(tick);
  };
- toggle.onclick=()=>{paused=!paused;try{env.localStorage.setItem('alibi-playground-paused',String(paused));}catch{}sync();};
  const observer=new env.ResizeObserver(measure);observer.observe(home);observer.observe(stage);observer.observe(home.querySelector('.join-sheet'));observer.observe(home.querySelector('.home-logo'));
  doc.addEventListener('visibilitychange',sync);motion.addEventListener('change',sync);env.addEventListener('resize',measure);
  doc.fonts?.ready.then(()=>{if(!disposed)measure();});
  measure();sync();
  return {
   setQuiet(value){if(disposed||quiet===value)return;quiet=value;quietTime=clock;sync();},
-  destroy(){if(disposed)return;disposed=true;if(request)env.cancelAnimationFrame(request);request=0;observer.disconnect();doc.removeEventListener('visibilitychange',sync);motion.removeEventListener('change',sync);env.removeEventListener('resize',measure);toggle.onclick=null;front.svg.remove();back.svg.remove();star?.style.removeProperty('--playground-star-tilt');pencil?.style.removeProperty('--playground-pencil-opacity');},
+  destroy(){if(disposed)return;disposed=true;if(request)env.cancelAnimationFrame(request);request=0;observer.disconnect();doc.removeEventListener('visibilitychange',sync);motion.removeEventListener('change',sync);env.removeEventListener('resize',measure);front.svg.remove();back.svg.remove();star?.style.removeProperty('--playground-star-tilt');pencil?.style.removeProperty('--playground-pencil-opacity');},
  };
+}
+
+// The live match shares the menu/video rig, with each player's own appearance.
+export function characterRigSvg(config={}){
+ return `<svg class="live-character" viewBox="-8 -45 236 285" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">${actorMarkup(0,characterParts(config))}<g class="rig-paper" fill="#fffdf3" stroke="#292720" stroke-width="2"><path d="M58 138L142 134L149 176L62 180Z"/><path d="M73 151L127 147M75 160L120 157" stroke="#4d7c9d" opacity=".4"/></g><g class="rig-pencil" stroke="#292720" stroke-width="2"><path d="M-4 -34L4 -34L4 7L0 14L-4 7Z" fill="#e5b747"/></g>${handsMarkup(0)}</svg>`;
+}
+const liveRigs=new WeakMap();
+export function paintCharacterRig(svg,pose,{writing=false}={}){
+ let r=liveRigs.get(svg);
+ if(!r){const root=svg.querySelector('[data-actor]');r={root,...Object.fromEntries([...root.querySelectorAll('[data-part]')].map(n=>[n.dataset.part,n])),palms:[...svg.querySelectorAll('[data-palm]')],paper:svg.querySelector('.rig-paper'),pencil:svg.querySelector('.rig-pencil')};liveRigs.set(svg,r);}
+ for(const [key,values] of Object.entries(actorValues(pose,3)))if(r[key])attrs(r[key],values);
+ for(let side=0;side<2;side++)attrs(r.palms[side],handValues(pose,side));
+ attr(r.paper,'opacity',writing?1:0);attr(r.pencil,'opacity',writing?1:0);
+ if(writing){const hand=point(pose,...pose.hands[1]);attr(r.pencil,'transform',`translate(${hand.x} ${hand.y}) rotate(24)`);}
 }

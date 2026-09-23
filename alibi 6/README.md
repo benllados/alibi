@@ -1,4 +1,4 @@
-# Alibi · v0.9.0 — Meet your guides
+# Alibi · v0.11.1 — Clear mobile results and automatic next turns
 
 A real-time party game for 2–8 friends. One browser is the shared TV screen; every player joins from a separate phone or browser tab. Includes generated prompts, player-written questions, bluffing, secret roles, scoring, and a drawing finale.
 
@@ -8,15 +8,48 @@ See [UPDATE.md](UPDATE.md) for updating Ben's existing GitHub/Vercel/Render depl
 
 ## Update from the previous build
 
-Stop the old server with Ctrl+C. Unzip this build, then launch `Start-Alibi.command` or run `npm start` in the new `alibi` folder. Open http://localhost:3000 and refresh any old host/player tabs. Start a new room; in-memory matches do not carry across server restarts. This build opens with the handwritten Alibi logo, a clear game premise, and separate Host / Join choices. Room-code invitations still open the join form directly.
+Stop the old server with Ctrl+C. Unzip this build, then launch `Start-Alibi.command` or run `npm start` in the new `alibi` folder. Open http://localhost:3000 and refresh any old host/player tabs. Start a new room; in-memory matches do not carry across server restarts. This build opens with the handwritten Alibi logo, a clear game premise, and separate Join / Host choices, with joining first. Room-code invitations still open the join form directly.
 
-## What changed in v0.9.0
+## What changed in v0.11.1
 
-- The feature preview is now the approved **50-second character-led walkthrough**, with the four actual menu characters speaking in large text bubbles. It covers the premise, joining, character selection, normal bluffing/scoring, player questions, secret roles, the drawing finale, host coordination, reconnecting, and the winner.
+- Phone results stack your point receipt above a full-width leaderboard. Names stay on one line, point gains sit with totals, and shorter Answers / Scores tabs fit their buttons.
+- Score pages show fewer rows on smaller screens, with paging to reach every player.
+- Every reveal advances after 10 seconds: next question, next round, or final results as appropriate. The countdown is server-controlled and visible on the host and phones. Reconnecting does not restart it.
+- The host can Pause to freeze the remaining time, or choose Next now to continue early. Final results stay up until Play again. The longer writing and drawing timers are unchanged.
+- The reveal countdown is quiet and does not use the urgent submission-time flashing or ticking.
+
+## What changed in v0.11.0
+
+- Question writing now allows **90 seconds**; regular truth/lie writing and the finale truth allow **60 seconds**. Drawing remains **90 seconds** and voting **30 seconds**. Each submission phase advances immediately when all required people are done. Starting in v0.11.1, reveals advance automatically after 10 seconds.
+- The lobby has a couch full of the players’ chosen characters, a locally generated room QR code, and live customization updates.
+- The shared screen has a persistent animated cast: thinking, writing, waiting, celebrating, looking smug, and reacting to votes. The informed artist looks the same as every other artist until the reveal.
+- Round introductions use the smiley transition and finale flames. The server reserves 1.8 seconds before each timed phase’s countdown, so presentation does not spend the advertised writing/voting time.
+- Phone inputs and drawing canvases stay mounted during ordinary live updates. Draft text and the current drawing save in the tab’s session storage and survive refresh or leaving and returning to the room.
+- Sending, received, reconnecting, and paused states are explicit. A lost reply gets one retry with the exact same request ID and payload; the server does not count accepted actions twice.
+- Ballots have consistent letters, selected-answer summaries, disabled self-votes, and enlarged drawing previews. All answers, owners, voters, and truth appear together at reveal.
+- Scores count upward, positions move, new leaders get highlighted, and point labels travel on the shared screen. Each player has a receipt explaining their points, including role bonuses or losses.
+- Private role cards pair your character with its role illustration, explain availability, show eligible targets, and remind you to use an unused power in Round 2.
+- Drawing now has Undo, Redo, an eraser, undoable Clear, and an enlarged gallery. The featured person’s and artists’ instructions explain their separate jobs.
+- The winner wears a crown; real match statistics determine awards, ties are supported, and Play again keeps everyone in the room with their characters.
+- Added 16 prompts, bringing the regular bank to 64. House answers now also follow shared endings, along with beginnings, capitalization, punctuation, and length.
+- The cleaned-up menu, approved 80-second video, poster, captions, and original soundtrack remain included. No new dependencies or environment variables are required.
+
+## What changed in v0.10.1
+
+- **Join a game** is first, above **Host a game**. The short room-code and laptop/TV instructions remain.
+- Removed the marked top labels, extra device description, button/footer arrow icons, preview subtitle, divider wording, footer smiley, and visible playground pause control. The music control, four animated characters, and approved 80-second video remain.
+- Hosting now adds a browser-history entry. Browser Back returns to the menu; Forward reconnects to the same room using saved credentials. A visible **Back to menu** link is available on the host screen, including while connecting.
+- Navigation closes the old room stream and ignores delayed replies, while preserving unfinished answers and room credentials for reconnecting. Join forms also participate in browser Back/Forward.
+- Character animation still respects reduced motion and suspends when the page is hidden. Retired manual-pause preferences cannot leave the cast frozen.
+- All 76 automated checks pass, including navigation, reconnecting, and delayed-response regression cases. No new environment variables or dependencies are needed. This package is ready to upload and has not been deployed from this workspace.
+
+## What changed in v0.10.0
+
+- The feature preview is now the approved **80-second character-led walkthrough**, with the four actual menu characters speaking in large text bubbles. It covers the premise, joining, character selection, normal bluffing/scoring, player questions, secret roles, the drawing finale, host coordination, reconnecting, and the winner.
 - Uses the production articulated SVG rig, handwriting, logo-to-smiley transition, cartoon finale flames, progressive drawing strokes, anonymous voting, and the frog-hat closing joke.
 - The exact approved simple-language dialogue is on screen. No profanity or GPT attribution appears in the video. The separately opened project case study is unchanged.
-- The original Paper Trails fifty-second edit is mixed with synthesized paper, selection, reveal, and frog sounds. Dialogue works entirely through speech bubbles; there is no spoken narration.
-- Export: H.264, 1920×1080, 24 fps, AAC stereo, exactly 50 seconds, with fast-start metadata. Native controls, click-to-play, a new poster, an optional English caption track, and the complete dialogue transcript are included.
+- An 80-second edit of the original Paper Trails stems is mixed with quiet paper, selection, customization, and reveal sounds. Dialogue works entirely through speech bubbles; there is no spoken narration.
+- Export: H.264, 1920×1080, 24 fps, AAC stereo, exactly 80 seconds, with fast-start metadata. Native controls, click-to-play, a new poster, an optional English caption track, and the complete dialogue transcript are included.
 - The walkthrough is labeled **Example game** and uses composed gameplay examples, rather than claiming to be a recorded live match. This update is prepared locally and has not been deployed.
 
 ## What changed in v0.8.0
@@ -102,17 +135,17 @@ If port 3000 is already occupied, macOS/Linux users can run `PORT=3001 npm start
 
 AI needs an internet connection and uses your OpenAI API account. The server sends the question and unlabeled submitted answers for house bluffs, or the question and assigned answer descriptions for computer drawings. The key stays on the server; it is never served to players. Calls use `store: false`. Implementation references: [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses), [GPT-4.1 mini](https://developers.openai.com/api/docs/models/gpt-4.1-mini).
 
-House answers are generated only when extra options are needed in two- or three-player regular turns. The game briefly displays “Getting the choices ready,” then starts the full 30-second vote timer. Slow or invalid results fall back to local answers; late results cannot change an open ballot. If AI is unavailable, the terminal reports that local fallback is being used.
+House answers are generated only when extra options are needed in two- or three-player regular turns. The game briefly displays “Shuffling the papers…,” then starts the full 30-second vote timer. Slow or invalid results fall back to local answers; late results cannot change an open ballot. If AI is unavailable, the terminal reports that local fallback is being used.
 
 Computer sketches are prepared during the drawing timer. Local doodles cover common objects, animals, foods, and places. In a **two-player finale**, a free-form answer the local artist cannot recognize needs AI; without it, the featured player is asked to choose a concrete answer or replace the question. If AI cannot draw an unsupported answer, the game asks for a new answer rather than displaying an unrelated true drawing. Three-player games have a human informed artist, so this restriction does not apply.
 
 ## Test by yourself
 
-Host a game. Click **player tab +** twice and join under two different names. Keep the host tab visible and switch between the two player tabs. Each tab has its own private session. Start the match from the host screen.
+Host a game. Click **Open player tab** twice and join under two different names. Keep the host tab visible and switch between the two player tabs. Each tab has its own private session. Start the match from the host screen.
 
-The host can **pause**, **end timer**, and choose **next mess** after each reveal. End timer skips missing submissions; if the truth or informed drawing is missing, the whole turn is skipped without points.
+Reveals advance automatically after 10 seconds. The host can **Pause** to freeze that countdown or choose **Next question / Next round now** to continue early. During submission phases, **End timer** remains available. End timer skips missing submissions; if the truth or informed drawing is missing, the whole turn is skipped without points.
 
-Refresh any tab to reconnect to the same seat. A submitted answer or drawing stays submitted. Unsubmitted form text/drawings survive ordinary live updates, but are not saved across a page refresh.
+Refresh any tab to reconnect to the same seat. A submitted answer or drawing stays submitted. Unsubmitted text and the current drawing are saved in this tab’s session storage and restored after refresh. They are not transferred to another device or a new private browsing session.
 
 ## Play on phones and a TV
 
@@ -125,19 +158,19 @@ Refresh any tab to reconnect to the same seat. A submitted answer or drawing sta
 
 ## Rules implemented
 
-### Round 1 — The warm-up
+### Round 1 — Our questions
 
-Each player gets one spotlight turn. The game picks a personal question from a shuffled bank of 48 prompts. The featured player submits the truth; the others submit lies. Truths and lies are written simultaneously with a 30-second limit, then eligible players have 30 seconds to vote. Your own lie is never a valid vote.
+Each player gets one spotlight turn. The game picks a personal question from a shuffled bank of 64 prompts. The featured player submits the truth; the others submit lies. Truths and lies are written simultaneously with a 60-second limit, then eligible players have 30 seconds to vote. Your own lie is never a valid vote.
 
 A correct answer earns 500 points. Each person fooled earns the bluff’s author 250. The featured player does not vote. If identical lies are merged, each contributing author receives the lie points; matching the true answer never earns lie points.
 
-### Round 2 — Your dirty questions
+### Round 2 — Your questions
 
-Players have 60 seconds to write one question about an assigned friend. Every player is assigned a different friend and receives exactly one question. Each question then becomes a normal spotlight turn with the same timers and scoring. Missing questions receive generated replacements. A featured player can request a new prompt before answering, without a penalty.
+Players have 90 seconds to write one question about an assigned friend. Every player is assigned a different friend and receives exactly one question. Each question then becomes a normal spotlight turn with the same timers and scoring. Missing questions receive generated replacements. A featured player can request a new prompt before answering, without a penalty.
 
-### Round 3 — Sketchy shit
+### Round 3 — The drawing finale
 
-One randomly selected person gets 30 seconds to privately answer a drawable prompt about themselves. They then watch the drawing and voting and explain their answer at the reveal.
+One randomly selected person gets 60 seconds to privately answer a drawable prompt about themselves. They then watch the drawing and voting and explain their answer at the reveal.
 
 In a game with 3–8 players, one **other** player secretly receives the exact answer. That person draws the real answer; every remaining player sees only the question and draws a believable guess. Artists have 90 seconds. No words or initials. The featured person and informed artist do not vote. Blind artists have 30 seconds to find the informed artist’s drawing, excluding their own.
 
@@ -174,7 +207,7 @@ Forger and Mind Reader are excluded from two-player games. Role controls appear 
 - Unrevealed answers, drawing assignments, vote ownership, and role powers are filtered by the server for each recipient.
 - Drawing uses validated vector strokes and works with a mouse, touch, or a stylus.
 - This package supports the existing Vercel/Render deployment; these changes have not been deployed from this workspace. There is no database, voice chat, moderation dashboard, or automated artwork judging. Players enforce the drawing rule together.
-- 73 automated checks cover complete 2-, 3-, 4-, and 8-player games, real HTTP/SSE networking, private state, timers, simulated AI success/failure, character validation and synchronization, and rendering every game phase for eight players. They also check the playground’s scene progression, prop attachment and continuity, simultaneous activities, alternate scene orders, desktop/phone geometry, animation lifecycle and pause preferences, static module delivery, homepage navigation, video seeking, long-answer paging, adaptive music levels, synchronized loop sources, menu-to-host continuity, remembered mute/volume, hidden-tab and preview suspension, download failure/race recovery, that player clients cannot initialize music, trusted hosting origins, and hosted invite-address behavior.
+- 96 automated checks cover complete 2-, 3-, 4-, and 8-player games, real HTTP/SSE networking, private state, timers, simulated AI success/failure, character validation and synchronization, and rendering every game phase for eight players. New checks cover exact retry payloads, score receipts and privacy, automatic progression, preserved live inputs/canvas state, drawing undo/redo, public character reactions, and reference QR encoding. They also check the playground’s scene progression, prop attachment and continuity, simultaneous activities, alternate scene orders, desktop/phone geometry, animation lifecycle and reduced motion, static module delivery, homepage navigation, video seeking, long-answer paging, adaptive music levels, synchronized loop sources, menu-to-host continuity, remembered mute/volume, hidden-tab and preview suspension, download failure/race recovery, that player clients cannot initialize music, trusted hosting origins, and hosted invite-address behavior.
 - The actual vector logo, character combinations, and sticker artwork were rendered and visually inspected. The browser download was blocked in this environment, so real browser layout, touch, animation, and audio playback have not been verified here. Fixed-height phone behavior needs local testing, particularly with the keyboard open and on very short screens. Live OpenAI calls remain untested without a key.
 
 ## Development and tests
@@ -196,6 +229,8 @@ npm test
 - `public/characters.js`: shared avatar vocabulary, validation, and vector rendering.
 - `public/playground-scene.js`: deterministic choreography and character poses.
 - `public/playground.js`: articulated SVG rendering, measured menu anchors, and animation lifecycle.
+- `public/gameplay-cast.js` / `public/gameplay-ui.js` / `public/gameplay.css`: live character behavior, phase instructions, role availability, score receipts, and game layouts.
+- `public/qr.js`: local room invitation QR encoding; no external image service.
 - `public/playground.css`: simplified homepage layout and responsive stage.
 - `public/art.js` / `public/logo.js`: original doodles, role art, and outlined Smile Moon wordmark.
 - `public/audio.js` / `public/music/`: original menu/host soundtrack, adaptive playback, and game cues.

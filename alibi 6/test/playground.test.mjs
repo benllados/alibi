@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {CAST,CYCLE,PROGRAM,schedule,cueAt,sceneFrame,point,headPoint} from '../public/playground-scene.js';
 import {mountPlayground,renderSceneSvg} from '../public/playground.js';
+import {castMarkup,mountGameCast} from '../public/gameplay-cast.js';
 import {validateCharacter} from '../public/characters.js';
 
 const desktop={width:1280,height:740,mobile:false,stage:{x:65,y:507,width:1130,height:176},logo:{x:90,y:95,width:470,height:240},sheet:{x:770,y:132,width:400,height:370},star:{x:1180,y:214},pencil:{x:1193,y:517}};
@@ -69,7 +70,8 @@ test('Two complete cycles stay finite and on the notebook at laptop and phone si
 // A small DOM fixture exercises scheduling and cleanup without pretending to
 // measure browser layout. Bounds above are explicit test inputs.
 class Node {
- constructor(tag='div',attrs={}){this.tag=tag;this.attrs={...attrs};this.children=[];this.dataset=Object.fromEntries(Object.entries(attrs).filter(([k])=>k.startsWith('data-')).map(([k,v])=>[k.slice(5),v]));this.style={setProperty(){},removeProperty(){}};}
+ constructor(tag='div',attrs={}){this.tag=tag;this.attrs={...attrs};this.children=[];this.dataset=Object.fromEntries(Object.entries(attrs).filter(([k])=>k.startsWith('data-')).map(([k,v])=>[k.slice(5).replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),v]));this.style={setProperty(){},removeProperty(){}};}
+ set innerHTML(source){this.children=[];this.insertAdjacentHTML('beforeend',source);}
  getAttribute(k){return this.attrs[k]??null;} setAttribute(k,v){this.attrs[k]=String(v);}
  matches(s){if(s.startsWith('.'))return (this.attrs.class||'').split(' ').includes(s.slice(1));if(s.startsWith('['))return Object.hasOwn(this.attrs,s.slice(1,-1));return this.tag===s;}
  querySelectorAll(s){const [parent,child]=s.split(' ');const all=this.children.flatMap(n=>[n,...n.querySelectorAll('*')]);return child?all.filter(n=>n.matches(parent)).flatMap(n=>n.querySelectorAll(child)):all.filter(n=>s==='*'||n.matches(s));}
@@ -87,11 +89,10 @@ function fixture(){
  const rect=(className,r)=>{const n=home.append(new Node('div',{class:className}));n.getBoundingClientRect=()=>({left:r.x,top:r.y,width:r.width,height:r.height});return n;};
  rect('playground-space',desktop.stage);rect('home-logo',desktop.logo);rect('join-sheet',desktop.sheet);
  rect('home-star',{x:1160,y:194,width:40,height:40});rect('home-pencil',{x:1173,y:497,width:40,height:40});
- const toggle=home.append(new Node('button',{class:'playground-toggle'}));
- return {home,toggle,env,doc,media,frames,saved,disconnected:()=>disconnected,step(now){const work=[...frames.values()];frames.clear();work.forEach(fn=>fn(now));}};
+ return {home,env,doc,media,frames,saved,disconnected:()=>disconnected,step(now){const work=[...frames.values()];frames.clear();work.forEach(fn=>fn(now));}};
 }
 
-test('Animation stops while hidden, paused or reduced; quiet forms clear props; leaving tears everything down',()=>{
+test('Animation works without a pause button and stops while hidden or reduced; quiet forms clear props; leaving tears everything down',()=>{
  const x=fixture(),p=mountPlayground(x.home,{env:x.env});
  assert.equal(x.frames.size,1);
  for(let t=100;t<8000;t+=100)x.step(t);
@@ -99,15 +100,28 @@ test('Animation stops while hidden, paused or reduced; quiet forms clear props; 
  x.doc.hidden=true;x.doc.fire('visibilitychange');assert.equal(x.frames.size,0);
  x.step(900000);assert.equal(actor.getAttribute('transform'),position);
  x.doc.hidden=false;x.doc.fire('visibilitychange');x.step(900100);assert.equal(actor.getAttribute('transform'),position);
- x.toggle.onclick();assert.equal(x.frames.size,0);assert.equal(x.toggle.getAttribute('aria-pressed'),'true');assert.equal(x.saved.get('alibi-playground-paused'),'true');
- x.toggle.onclick();assert.equal(x.frames.size,1);
  p.setQuiet(true);for(const n of x.home.querySelectorAll('[data-prop]'))assert.equal(n.getAttribute('opacity'),'0');
  p.setQuiet(false);assert.equal(x.frames.size,1);
- x.media.matches=true;x.media.fire('change');assert.equal(x.frames.size,0);assert.equal(x.toggle.disabled,true);
+ x.media.matches=true;x.media.fire('change');assert.equal(x.frames.size,0);
  x.media.matches=false;x.media.fire('change');assert.equal(x.frames.size,1);
  p.destroy();p.destroy();assert.equal(x.frames.size,0);assert.ok(x.disconnected());assert.equal(x.doc.listeners.size,0);assert.equal(x.env.listeners.size,0);assert.equal(x.media.listeners.size,0);assert.equal(x.home.querySelectorAll('svg').length,0);
 });
 
-test('Pause preference survives a fresh homepage mount',()=>{
- const x=fixture();x.saved.set('alibi-playground-paused','true');const p=mountPlayground(x.home,{env:x.env});assert.equal(x.frames.size,0);assert.match(x.toggle.innerHTML,/resume/);x.toggle.onclick();assert.equal(x.frames.size,1);p.destroy();
+test('A retired pause preference cannot leave the menu characters permanently frozen',()=>{
+ const x=fixture();x.saved.set('alibi-playground-paused','true');const p=mountPlayground(x.home,{env:x.env});assert.equal(x.frames.size,1);assert.equal(x.home.querySelector('.playground-toggle'),null);p.destroy();
+});
+
+
+test('Live match rigs use chosen appearances, react to submissions, pause, and clean up their animation loop',()=>{
+ const x=fixture();let s={phase:'lobby',players:CAST.map(({name,...character},i)=>({id:String(i),name,character,color:i,score:0,ready:false}))};
+ x.home.innerHTML=castMarkup(s.players,{couch:true});
+ const cast=mountGameCast(x.home,s,{env:x.env});assert.equal(x.frames.size,1);
+ const seats=x.home.querySelectorAll('[data-cast-player]');assert.equal(seats.length,4);
+ s={...s,phase:'write',turn:{writers:s.players.map(p=>p.id)}};cast.update(s);for(const seat of seats){assert.equal(seat.dataset.mood,'writing');assert.equal(seat.querySelector('.rig-paper').getAttribute('opacity'),'1');}
+ x.step(100);x.step(300);const head=seats[0].querySelectorAll('[data-part]').find(n=>n.dataset.part==='head'),before=head.getAttribute('transform');x.step(600);assert.notEqual(head.getAttribute('transform'),before);
+ s.players[0].ready=true;cast.update(s);assert.equal(seats[0].dataset.mood,'done');assert.equal(seats[0].querySelector('.rig-paper').getAttribute('opacity'),'0');
+ const oldSvg=seats[1].querySelector('.live-character');s.players[1].character={...s.players[1].character,hat:'crown'};cast.update(s);assert.notEqual(seats[1].querySelector('.live-character'),oldSvg);
+ s.paused=true;cast.update(s);assert.equal(x.frames.size,0);s.paused=false;cast.update(s);assert.equal(x.frames.size,1);
+ x.doc.hidden=true;x.doc.fire('visibilitychange');assert.equal(x.frames.size,0);x.doc.hidden=false;x.doc.fire('visibilitychange');assert.equal(x.frames.size,1);
+ x.media.matches=true;x.media.fire('change');assert.equal(x.frames.size,0);cast.destroy();assert.equal(x.doc.listeners.size,0);assert.equal(x.media.listeners.size,0);assert.equal(x.frames.size,0);
 });
